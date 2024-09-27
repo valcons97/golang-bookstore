@@ -24,6 +24,21 @@ func main() {
 
 	router := gin.Default()
 
+	router.GET("/tables", func(c *gin.Context) {
+		// Get the table names from the database schema using GORM's Migrator
+		tables := []string{}
+
+		migrator := db.Migrator()
+
+		tables, err := migrator.GetTables()
+		if err != nil {
+			return
+		}
+
+		// Return the table names as JSON response
+		c.JSON(http.StatusOK, tables)
+	})
+
 	router.GET("/books", func(c *gin.Context) {
 		var books []book.Book
 		db.Find(&books)
