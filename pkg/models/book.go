@@ -1,32 +1,32 @@
 package models
 
 import (
-	"math/rand"
-
 	"gorm.io/gorm"
 )
 
 type Book struct {
-    Id int `json:"id" gorm:"primaryKey"`
-    Title string `json:"title"`
-    Author string `json:"author"`
-    Description string `json:"description"`
+	Id     int    `json:"id"     gorm:"primaryKey"`
+	Title  string `json:"title"`
+	Author string `json:"author"`
 }
 
-func Migrate(db *gorm.DB) {
-    db.AutoMigrate(&Book{})
+func Migrate(db *gorm.DB) error {
+	return db.AutoMigrate(&Book{})
 }
 
-// SeedBooks generates random book data
+// SeedBooks when first building docker image
 func SeedBooks(db *gorm.DB, count int) {
-	titles := []string{"1984", "To Kill a Mockingbird", "The Great Gatsby", "Moby Dick", "War and Peace"}
-	authors := []string{"George Orwell", "Harper Lee", "F. Scott Fitzgerald", "Herman Melville", "Leo Tolstoy"}
+	var books []Book
+	if result := db.Find(&books); result.Error == nil && len(books) == 0 {
 
-	for i := 0; i < count; i++ {
-		book := Book{
-			Title:  titles[rand.Intn(len(titles))],
-			Author: authors[rand.Intn(len(authors))],
+		seedBooks := []Book{
+			{Title: "1984", Author: "George Orwell"},
+			{Title: "To Kill a Mockingbird", Author: "Harper Lee"},
+			{Title: "The Great Gatsby", Author: "F. Scott Fitzgerald"},
+			{Title: "Moby Dick", Author: "Herman Melville"},
+			{Title: "War and Peace", Author: "Leo Tolstoy"},
 		}
-		db.Create(&book)
+
+		db.Create(&seedBooks)
 	}
 }

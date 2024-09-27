@@ -3,9 +3,7 @@ package main
 import (
 	"bookstore/pkg/models"
 	"log"
-	"math/rand"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
@@ -15,8 +13,6 @@ import (
 func main() {
     headerLog := "BookStore"
 
-    rand.Seed(time.Now().UnixNano())
-
     // connection to db
     conn := "host=db user=user password=password dbname=bookstore port=5432 sslmode=disable"
     
@@ -25,11 +21,6 @@ func main() {
     if err != nil {
         log.Fatalf("[%v]Could not connect to the database: %v",headerLog, err)
     }
-
-    models.Migrate(db)
-
-    // Seed the database with random books
-	models.SeedBooks(db, 10)
 
     router := gin.Default()
 
