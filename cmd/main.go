@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bookstore/pkg/models"
+	"bookstore/internal/book"
 	"log"
 	"net/http"
 
@@ -11,27 +11,27 @@ import (
 )
 
 func main() {
-    headerLog := "BookStore"
+	headerLog := "BookStore"
 
-    // connection to db
-    conn := "host=db user=user password=password dbname=bookstore port=5432 sslmode=disable"
-    
-    db, err := gorm.Open(postgres.Open(conn), &gorm.Config{})
+	// connection to db
+	conn := "host=db user=user password=password dbname=bookstore port=5432 sslmode=disable"
 
-    if err != nil {
-        log.Fatalf("[%v]Could not connect to the database: %v",headerLog, err)
-    }
+	db, err := gorm.Open(postgres.Open(conn), &gorm.Config{})
 
-    router := gin.Default()
+	if err != nil {
+		log.Fatalf("[%v]Could not connect to the database: %v", headerLog, err)
+	}
 
-    router.GET("/books", func(c *gin.Context) {
-		var books []models.Book
+	router := gin.Default()
+
+	router.GET("/books", func(c *gin.Context) {
+		var books []book.Book
 		db.Find(&books)
 		c.JSON(http.StatusOK, books)
 	})
 
 	router.POST("/books", func(c *gin.Context) {
-		var book models.Book
+		var book book.Book
 		if err := c.ShouldBindJSON(&book); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -40,7 +40,7 @@ func main() {
 		c.JSON(http.StatusCreated, book)
 	})
 
-    if err := router.Run(":8080"); err != nil {
-		log.Fatalf("[%v]Could not run server: %v",headerLog, err)
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("[%v]Could not run server: %v", headerLog, err)
 	}
 }
