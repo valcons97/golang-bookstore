@@ -5,7 +5,6 @@ import (
 	"bookstore/pkg/utils"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 )
 
@@ -28,16 +27,15 @@ func (c *customerRepository) Login(email string, password string) (*model.Custom
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Email not found
-			return nil, fmt.Errorf("customer not found")
+			return nil, errors.New("Invalid Email or Password")
 		}
-		return nil, fmt.Errorf("could not query customer: %w", err)
+		return nil, err
 	}
 
 	// Here you should compare the provided password with the stored password
 	// assuming you have a function `CheckPassword` to verify the password
 	if !utils.CheckPassword(password, customer.Password) {
-		return nil, errors.New("Invalid Password")
+		return nil, errors.New("Invalid Email or Password")
 	}
 
 	return &customer, nil

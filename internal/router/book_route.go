@@ -1,4 +1,4 @@
-package book
+package router
 
 import (
 	"bookstore/internal/book/handler"
@@ -9,10 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Router(router *gin.Engine, db *sql.DB) {
-	repo := repository.NewBookRepository(db)   // Create the repository
-	svc := service.NewBookService(repo)        // Create the service
-	handler := handler.NewBookHandler(svc) // Create the handler
+func BookRouter(router *gin.Engine, db *sql.DB) {
+	repo := repository.NewBookRepository(db) // Create the repository
+	svc := service.NewBookService(repo)      // Create the service
+	handler := handler.NewBookHandler(svc)   // Create the handler
 
 	// Define the routes
 	router.GET("/book", handler.GetBooks)

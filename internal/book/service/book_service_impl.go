@@ -2,33 +2,33 @@ package service
 
 import (
 	"bookstore/internal/book/model"
-	"bookstore/internal/book/repository"
+	"bookstore/internal/repository"
 )
 
-type service struct {
+type bookService struct {
 	repository repository.BookRepository
 }
 
 func NewBookService(repository repository.BookRepository) BookService {
-	return &service{repository: repository}
+	return &bookService{repository: repository}
 }
 
 // CreateBook implements Service.
-func (s *service) CreateBook(book *model.Book) (int, error) {
+func (s *bookService) CreateBook(book *model.Book) (int, error) {
 	return s.repository.CreateBook(book)
 }
 
 // GetBookById implements Service.
-func (s *service) GetBookById(id int) (model.Book, error) {
+func (s *bookService) GetBookById(id int) (model.Book, error) {
 	return s.repository.GetBookById(id)
 }
 
 // GetBooks implements Service.
-func (s *service) GetBooks() ([]model.Book, error) {
+func (s *bookService) GetBooks() ([]model.Book, error) {
 	return s.repository.GetBooks()
 }
 
 // UpdateBook implements Service.
-func (s *service) UpdateBook(book *model.Book) error {
+func (s *bookService) UpdateBook(book *model.Book) error {
 	return s.repository.UpdateBook(book)
 }

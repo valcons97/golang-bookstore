@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bookstore/internal/book"
+	"bookstore/internal/router"
 	"log"
 	"net/http"
 
@@ -27,9 +27,9 @@ func main() {
 		log.Fatalf("Failed to retrieve sql.DB from GORM: %v", err)
 	}
 
-	router := gin.Default()
+	r := gin.Default()
 
-	router.GET("/tables", func(c *gin.Context) {
+	r.GET("/tables", func(c *gin.Context) {
 		// Get the table names from the database schema using GORM's Migrator
 		tables := []string{}
 
@@ -44,9 +44,9 @@ func main() {
 		c.JSON(http.StatusOK, tables)
 	})
 
-	book.Router(router, sqlDB)
+	router.BookRouter(r, sqlDB)
 
-	if err := router.Run(":8080"); err != nil {
+	if err := r.Run(":8080"); err != nil {
 		log.Fatalf("[%v]Could not run server: %v", headerLog, err)
 	}
 }

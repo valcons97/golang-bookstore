@@ -1,6 +1,7 @@
-package auth
+package utils
 
 import (
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -12,7 +13,7 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-func GenerateToken(userID int, email string, secretKey string) (string, error) {
+func GenerateToken(userID int, email string) (string, error) {
 	claims := Claims{
 		ID:    userID,
 		Email: email,
@@ -22,5 +23,5 @@ func GenerateToken(userID int, email string, secretKey string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secretKey))
+	return token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 }
