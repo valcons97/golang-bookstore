@@ -1,6 +1,6 @@
 package repository
 
-import "bookstore/internal/customer/model"
+import "bookstore/internal/model"
 
 type CustomerRepository interface {
 	Register(customer *model.Customer) error

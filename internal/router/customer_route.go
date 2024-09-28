@@ -1,9 +1,10 @@
 package router
 
 import (
-	"bookstore/internal/customer/handler"
-	"bookstore/internal/customer/repository"
-	"bookstore/internal/customer/service"
+	"bookstore/internal/handler"
+	"bookstore/internal/repository"
+	"bookstore/internal/service"
+
 	"database/sql"
 
 	"github.com/gin-gonic/gin"

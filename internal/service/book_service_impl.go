@@ -1,8 +1,8 @@
 package service
 
 import (
-	"bookstore/internal/book/model"
-	"bookstore/internal/book/repository"
+	"bookstore/internal/model"
+	"bookstore/internal/repository"
 )
 
 type service struct {

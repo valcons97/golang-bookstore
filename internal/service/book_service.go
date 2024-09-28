@@ -1,10 +1,8 @@
-package repository
+package service
 
-import (
-	"bookstore/internal/book/model"
-)
+import "bookstore/internal/model"
 
-type BookRepository interface {
+type BookService interface {
 	CreateBook(book *model.Book) (int, error)
 	GetBooks() ([]model.Book, error)
 	GetBookById(id int) (model.Book, error)

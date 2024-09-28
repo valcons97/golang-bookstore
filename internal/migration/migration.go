@@ -1,7 +1,7 @@
 package migration
 
 import (
-	"bookstore/internal/book/model"
+	"bookstore/internal/model"
 	converter "bookstore/pkg/utils"
 	"database/sql"
 	"fmt"

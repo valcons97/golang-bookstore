@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"bookstore/internal/book/model"
+	"bookstore/internal/model"
 	converter "bookstore/pkg/utils"
 	"database/sql"
 	"errors"

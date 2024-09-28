@@ -1,6 +1,6 @@
 package service
 
-import "bookstore/internal/customer/model"
+import "bookstore/internal/model"
 
 type CustomerService interface {
 	Register(customer *model.Customer) error

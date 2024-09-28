@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"bookstore/internal/customer/model"
-	"bookstore/internal/customer/service"
+	"bookstore/internal/model"
+	"bookstore/internal/service"
 	"bookstore/pkg/utils"
 	"log"
 	"net/http"

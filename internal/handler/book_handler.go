@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"bookstore/internal/book/model"
-	"bookstore/internal/book/service"
+	"bookstore/internal/model"
+	"bookstore/internal/service"
 	"net/http"
 	"strconv"
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bookstore/internal/customer/model"
+	"bookstore/internal/model"
 	"bookstore/internal/router"
 	"log"
 	"net/http"
