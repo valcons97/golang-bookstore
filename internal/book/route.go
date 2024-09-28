@@ -10,8 +10,8 @@ import (
 )
 
 func Router(router *gin.Engine, db *sql.DB) {
-	repo := repository.NewRepository(db)   // Create the repository
-	svc := service.NewService(repo)        // Create the service
+	repo := repository.NewBookRepository(db)   // Create the repository
+	svc := service.NewBookService(repo)        // Create the service
 	handler := handler.NewBookHandler(svc) // Create the handler
 
 	// Define the routes

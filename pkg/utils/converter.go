@@ -1,4 +1,4 @@
-package converter
+package utils
 
 func ConvertStorePrice(value *float64) *int64 {
 

@@ -8,16 +8,16 @@ import (
 	"log"
 )
 
-type repository struct {
+type bookRepository struct {
 	db *sql.DB
 }
 
-func NewRepository(db *sql.DB) BookRepository {
-	return &repository{db: db}
+func NewBookRepository(db *sql.DB) BookRepository {
+	return &bookRepository{db: db}
 }
 
 // Add new book to the database.
-func (r *repository) CreateBook(book *model.Book) (int, error) {
+func (r *bookRepository) CreateBook(book *model.Book) (int, error) {
 	var id int
 
 	query := "INSERT INTO books (title, author, price) VALUES ($1, $2, $3) RETURNING ID"
@@ -30,7 +30,7 @@ func (r *repository) CreateBook(book *model.Book) (int, error) {
 }
 
 // Retrieves list of all books
-func (r *repository) GetBooks() ([]model.Book, error) {
+func (r *bookRepository) GetBooks() ([]model.Book, error) {
 	query := "SELECT id, title, author, price FROM books"
 	rows, err := r.db.Query(query)
 	if err != nil {
@@ -53,7 +53,7 @@ func (r *repository) GetBooks() ([]model.Book, error) {
 }
 
 // Retrieve a single book define by its id
-func (r *repository) GetBookById(id int) (model.Book, error) {
+func (r *bookRepository) GetBookById(id int) (model.Book, error) {
 	var book model.Book
 	var price int64
 	query := "SELECT id, title, author, price FROM books WHERE id = $1"
@@ -74,7 +74,7 @@ func (r *repository) GetBookById(id int) (model.Book, error) {
 }
 
 // UpdateBook implements Repository.
-func (r *repository) UpdateBook(book *model.Book) error {
+func (r *bookRepository) UpdateBook(book *model.Book) error {
 	var updateId int
 	query := "UPDATE books SET title = $1, author = $2, price = $3 WHERE id = $4 RETURNING id"
 	err := r.db.QueryRow(query, book.Title, book.Author, converter.ConvertStorePrice(&book.Price), book.ID).
