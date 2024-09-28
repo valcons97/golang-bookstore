@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bookstore/pkg/migration"
+	"bookstore/internal/migration"
 	"log"
 
 	"gorm.io/driver/postgres"

@@ -1,7 +1,7 @@
 package migration
 
 import (
-	"bookstore/pkg/book"
+	"bookstore/internal/book/model"
 	converter "bookstore/pkg/utils"
 	"database/sql"
 	"fmt"
@@ -69,7 +69,7 @@ func SeedBooks(db *sql.DB) {
 
 	// If the table is empty, insert seed data
 	if count == 0 {
-		seedBooks := []book.Book{
+		seedBooks := []model.Book{
 			{Title: "1984", Author: "George Orwell", Price: 9.99},
 			{Title: "To Kill a Mockingbird", Author: "Harper Lee", Price: 7.99},
 			{Title: "The Great Gatsby", Author: "F. Scott Fitzgerald", Price: 10.99},
@@ -83,7 +83,7 @@ func SeedBooks(db *sql.DB) {
 				"INSERT INTO books (title, author, price) VALUES ($1, $2, $3)",
 				book.Title,
 				book.Author,
-				converter.ConvertToBigInt(&book.Price),
+				converter.ConvertStorePrice(&book.Price),
 			)
 			if err != nil {
 				log.Fatalf("Error inserting book %s: %v", book.Title, err)

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bookstore/pkg/book"
+	"bookstore/internal/book"
 	"log"
 	"net/http"
 
@@ -22,6 +22,11 @@ func main() {
 		log.Fatalf("[%v]Could not connect to the database: %v", headerLog, err)
 	}
 
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to retrieve sql.DB from GORM: %v", err)
+	}
+
 	router := gin.Default()
 
 	router.GET("/tables", func(c *gin.Context) {
@@ -39,21 +44,7 @@ func main() {
 		c.JSON(http.StatusOK, tables)
 	})
 
-	router.GET("/books", func(c *gin.Context) {
-		var books []book.Book
-		db.Find(&books)
-		c.JSON(http.StatusOK, books)
-	})
-
-	router.POST("/books", func(c *gin.Context) {
-		var book book.Book
-		if err := c.ShouldBindJSON(&book); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		db.Create(&book)
-		c.JSON(http.StatusCreated, book)
-	})
+	book.Router(router, sqlDB)
 
 	if err := router.Run(":8080"); err != nil {
 		log.Fatalf("[%v]Could not run server: %v", headerLog, err)
