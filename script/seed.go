@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bookstore/internal/migration"
+	"bookstore/pkg/migration"
 	"log"
 
 	"gorm.io/driver/postgres"
@@ -20,12 +20,17 @@ func main() {
 		log.Fatalf("[%v] Seeding the initial db failed: %v", logHeader, err)
 	}
 
-	if err := migration.Migrate(db); err != nil {
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("[%v] Failed to retrieve sql.DB from GORM: %v", logHeader, err)
+	}
+
+	if err := migration.Migrate(sqlDB); err != nil {
 		log.Fatalf("[%v] Could not migrate books: %v", logHeader, err)
 	}
 
-	// Seed the database with random books
-	migration.SeedBooks(db, 10)
+	// Seed the database with books
+	migration.SeedBooks(sqlDB)
 
 	log.Printf("[%v] Database seeded with initial books.", logHeader)
 }

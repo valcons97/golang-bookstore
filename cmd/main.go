@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bookstore/internal/book"
+	"bookstore/pkg/book"
 	"log"
 	"net/http"
 
