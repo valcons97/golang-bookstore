@@ -46,4 +46,9 @@ golang-bookstore/
 │   ├── test/                # For unit testing
 ```
 
+## DB Diagram
+
+<img width="672" alt="image" src="https://github.com/user-attachments/assets/297ffc1e-72c3-4156-9fe1-9b33ceb5dae0">
+
+
 mockgen -source=./pkg/book/service.go -destination=./pkg/book/mock_service.go -package=book
