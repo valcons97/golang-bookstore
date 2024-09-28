@@ -4,6 +4,7 @@ import (
 	"bookstore/internal/customer/model"
 	"bookstore/internal/customer/service"
 	"bookstore/pkg/utils"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -18,22 +19,22 @@ func NewCustomerHandler(service service.CustomerService) *CustomerHandler {
 }
 
 func (h *CustomerHandler) Login(c *gin.Context) {
-	var request model.Customer
+	var request model.LoginRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
 		return
 	}
 
-	hashedPassword, err := utils.HashPassword(request.Password)
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// Check if email or password is empty
+	if request.Email == "" || request.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email or password cannot be empty"})
 		return
 	}
 
-	customer, err := h.Service.Login(request.Email, hashedPassword)
+	customer, err := h.Service.Login(request.Email, request.Password)
 	if err != nil {
+		log.Printf("[Login]: %v", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err})
 		return
 	}
@@ -43,6 +44,7 @@ func (h *CustomerHandler) Login(c *gin.Context) {
 		customer.Email,
 	)
 	if err != nil {
+		log.Printf("[Login]: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}

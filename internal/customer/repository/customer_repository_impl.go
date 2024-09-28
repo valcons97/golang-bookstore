@@ -34,6 +34,10 @@ func (c *customerRepository) Login(email string, password string) (*model.Custom
 
 	// Here you should compare the provided password with the stored password
 	// assuming you have a function `CheckPassword` to verify the password
+
+	log.Printf("[Login] password e: %v", password)
+	log.Printf("[Login] db pass e: %v", customer.Password)
+
 	if !utils.CheckPassword(password, customer.Password) {
 		return nil, errors.New("Invalid Email or Password")
 	}
@@ -49,10 +53,12 @@ func (c *customerRepository) Register(customer *model.Customer) error {
 
 	err := c.db.QueryRow(queryCheck, customer.Email).Scan(existingCustomer.ID)
 
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		log.Printf("[Register] something went wrong when checking e: %v", err)
 		return err
 	}
+
+	log.Printf("[Register] password e: %v", customer.Password)
 
 	if existingCustomer.ID != 0 {
 		return errors.New("Email already registered")

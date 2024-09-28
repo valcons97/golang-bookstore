@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bookstore/internal/customer/model"
 	"bookstore/internal/router"
 	"log"
 	"net/http"
@@ -44,7 +45,23 @@ func main() {
 		c.JSON(http.StatusOK, tables)
 	})
 
+	r.GET("/customers", func(c *gin.Context) {
+		// Declare a slice to hold customers
+		var customers []model.Customer
+
+		// Use GORM to find all customers
+		err := db.Find(&customers).Error
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Return the customers as JSON response
+		c.JSON(http.StatusOK, customers)
+	})
+
 	router.BookRouter(r, sqlDB)
+	router.CustomerRouter(r, sqlDB)
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatalf("[%v]Could not run server: %v", headerLog, err)

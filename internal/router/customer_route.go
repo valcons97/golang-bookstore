@@ -17,4 +17,5 @@ func CustomerRouter(router *gin.Engine, db *sql.DB) {
 	// Define the routes
 	router.POST("/register", handler.Register)
 	router.POST("/login", handler.Login)
+
 }

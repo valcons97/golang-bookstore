@@ -2,7 +2,7 @@ package service
 
 import (
 	"bookstore/internal/customer/model"
-	"bookstore/internal/repository"
+	"bookstore/internal/customer/repository"
 )
 
 type customerService struct {
