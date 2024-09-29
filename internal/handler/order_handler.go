@@ -13,6 +13,10 @@ type OrderHandler struct {
 	service service.OrderService
 }
 
+func NewOrderHandler(service service.OrderService) *OrderHandler {
+	return &OrderHandler{service: service}
+}
+
 func (h *OrderHandler) AddBookToOrder(c *gin.Context) {
 	var request model.AddOrderRequest
 
@@ -29,29 +33,26 @@ func (h *OrderHandler) AddBookToOrder(c *gin.Context) {
 		return
 	}
 
-	orderId, err := h.service.GetOrdersByCustomerID()
+	subTotal := request.Price * float64(request.Quantity)
 
-	detail := model.OrderDetail{}
+	orderId, err := h.service.CreateOrderIfNotExists(customerID)
 
-	// Optionally set the CustomerID in the orderDetail if needed
-	// This is useful if you want to keep track of which customer added the book
-	orderDetail.CustomerID = customerID
-
-	// Here, you might want to calculate subtotal based on the book's price
-	orderDetail.Subtotal = calculateSubtotal(orderDetail.BookID, orderDetail.Quantity)
-
-	// Ensure that orderDetail.OrderID is set to the appropriate order ID
-	if err := h.service.AddBookToOrder(&orderDetail); err != nil {
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, orderDetail)
-}
+	// Ensure that orderDetail.OrderID is set to the appropriate order ID
+	if err := h.service.AddToCart(
+		orderId,
+		int(request.BookId),
+		int(request.Quantity),
+		*utils.ConvertStorePrice(&subTotal)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-func calculateSubtotal(bookID int64, quantity int) int64 {
-	// Placeholder logic for fetching book price and calculating subtotal
-	// You should replace this with actual logic to fetch the book's price
-	bookPrice := 100 // Assume a hardcoded price for now
-	return int64(quantity) * int64(bookPrice)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Book added to cart",
+	})
 }

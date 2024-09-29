@@ -91,3 +91,33 @@ func SeedBooks(db *sql.DB) {
 		}
 	}
 }
+
+func AddUniqueConstraintIfNotExists(db *sql.DB) error {
+	// Check if the unique constraint already exists
+	var exists bool
+	query := `
+    SELECT EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'order_details_unique_order_book' 
+        AND table_name = 'order_details'
+    )`
+
+	err := db.QueryRow(query).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("could not check for constraint existence: %w", err)
+	}
+
+	// If the constraint does not exist, add it
+	if !exists {
+		_, err = db.Exec(`
+            ALTER TABLE order_details
+            ADD CONSTRAINT order_details_unique_order_book UNIQUE (order_id, book_id)
+        `)
+		if err != nil {
+			return fmt.Errorf("could not add unique constraint: %w", err)
+		}
+	}
+
+	return nil
+}

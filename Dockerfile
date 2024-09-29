@@ -19,5 +19,5 @@ RUN go build -o main ./cmd/main.go
 # Build the seed application
 RUN go build -o seed ./script/seed.go
 
-# Command to run the executable
+# Command to run the main application
 CMD ["./main"]

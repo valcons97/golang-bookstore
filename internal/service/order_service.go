@@ -6,10 +6,10 @@ import (
 )
 
 type OrderService interface {
-	AddBookToOrder(orderDetail *model.OrderDetail) error
+	AddToCart(orderID, bookID, quantity int, subtotal int64) error
 	GetCart(customerID int) (model.OrderResponse, error)
 	GetPaidOrder(customerID int) ([]model.OrderResponse, error)
-	CreateOrderIfNotExists(customerID int, total float64) (int, error)
+	CreateOrderIfNotExists(customerID int) (int, error)
 }
 
 type orderService struct {
@@ -20,13 +20,13 @@ func NewOrderService(repository repository.OrderRepository) OrderService {
 	return &orderService{repository: repository}
 }
 
-func (s *orderService) AddBookToOrder(orderDetail *model.OrderDetail) error {
-	return s.repository.AddBookToOrder(orderDetail)
+func (s *orderService) AddToCart(orderID, bookID, quantity int, subtotal int64) error {
+	return s.repository.AddOrUpdateCart(orderID, bookID, quantity, subtotal)
 }
 
 // CreateOrderIfNotExists implements OrderService.
-func (s *orderService) CreateOrderIfNotExists(customerID int, total float64) (int, error) {
-	return s.repository.CreateOrderIfNotExists(customerID, total)
+func (s *orderService) CreateOrderIfNotExists(customerID int) (int, error) {
+	return s.repository.CreateOrderIfNotExists(customerID)
 }
 
 // GetCart implements OrderService.

@@ -32,5 +32,9 @@ func main() {
 	// Seed the database with books
 	migration.SeedBooks(sqlDB)
 
+	if err := migration.AddUniqueConstraintIfNotExists(sqlDB); err != nil {
+		log.Fatalf("[%v] Could not migrate books: %v", logHeader, err)
+	}
+
 	log.Printf("[%v] Database seeded with initial books.", logHeader)
 }
