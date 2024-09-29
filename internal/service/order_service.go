@@ -7,10 +7,11 @@ import (
 
 type OrderService interface {
 	AddToCart(orderID, bookID, quantity int, subtotal int64) error
-	GetCart(customerID int) (model.OrderResponse, error)
-	GetPaidOrder(customerID int) ([]model.OrderResponse, error)
+	GetCart(orderId int) (model.OrderResponse, error)
+	GetOrderHistory(customerID int) ([]model.OrderResponse, error)
 	CreateOrderIfNotExists(customerID int) (int, error)
 	RemoveFromCart(orderId int, bookId int) error
+	PayOrder(customerID int) error
 }
 
 type orderService struct {
@@ -31,16 +32,21 @@ func (s *orderService) CreateOrderIfNotExists(customerID int) (int, error) {
 }
 
 // GetCart implements OrderService.
-func (s *orderService) GetCart(customerID int) (model.OrderResponse, error) {
-	return s.repository.GetCart(customerID)
+func (s *orderService) GetCart(orderId int) (model.OrderResponse, error) {
+	return s.repository.GetCart(orderId)
 }
 
-// GetPaidOrder implements OrderService.
-func (s *orderService) GetPaidOrder(customerID int) ([]model.OrderResponse, error) {
-	return s.repository.GetPaidOrder(customerID)
+// GetOrderHistory implements OrderService.
+func (s *orderService) GetOrderHistory(customerID int) ([]model.OrderResponse, error) {
+	return s.repository.GetOrderHistory(customerID)
 }
 
 // GetCart implements OrderService.
 func (s *orderService) RemoveFromCart(orderId int, bookId int) error {
 	return s.repository.RemoveFromCart(orderId, bookId)
+}
+
+// GetCart implements OrderService.
+func (s *orderService) PayOrder(customerId int) error {
+	return s.repository.PayOrder(customerId)
 }

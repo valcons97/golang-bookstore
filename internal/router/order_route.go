@@ -19,6 +19,7 @@ func OrderRouter(router *gin.Engine, db *sql.DB, authMiddleware gin.HandlerFunc)
 
 	// Define the routes
 	orderRoutes.POST("/add", handler.AddToCart)
+	orderRoutes.POST("/pay", handler.PayOrder)
 	orderRoutes.POST("/delete", handler.RemoveFromCart)
 	orderRoutes.GET("/get", handler.GetCart)
 

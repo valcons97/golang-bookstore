@@ -12,9 +12,10 @@ import (
 type OrderRepository interface {
 	AddOrUpdateCart(orderID, bookID, quantity int, subtotal int64) error
 	RemoveFromCart(orderId int, bookId int) error
-	GetCart(customerID int) (model.OrderResponse, error)
-	GetPaidOrder(customerID int) ([]model.OrderResponse, error)
+	GetCart(orderId int) (model.OrderResponse, error)
+	GetOrderHistory(customerID int) ([]model.OrderResponse, error)
 	CreateOrderIfNotExists(customerID int) (int, error)
+	PayOrder(customerID int) error
 }
 
 type orderRepository struct {
@@ -27,17 +28,18 @@ func NewOrderRepository(db *sql.DB) OrderRepository {
 }
 
 // GetCart implements OrderRepository.
-func (r *orderRepository) GetCart(customerID int) (model.OrderResponse, error) {
+func (r *orderRepository) GetCart(orderId int) (model.OrderResponse, error) {
 	query := `SELECT o.id, o.total,
 			  d.id AS detail_id, d.book_id, d.quantity, d.subtotal,
 			  b.title, b.author, b.price
 			  FROM orders o
 			  JOIN order_details d ON o.id = d.order_id
 			  JOIN books b ON d.book_id = b.id
-			  WHERE o.customer_id = $1 AND o.order_state = 1`
+			  WHERE o.id = $1`
 
-	rows, err := r.db.Query(query, customerID)
+	rows, err := r.db.Query(query, orderId)
 	if err != nil {
+		log.Printf("Error :%v", err)
 		return model.OrderResponse{}, fmt.Errorf("could not retrieve cart: %w", err)
 	}
 
@@ -48,7 +50,11 @@ func (r *orderRepository) GetCart(customerID int) (model.OrderResponse, error) {
 
 	// Check if the cart slice is empty
 	if len(cart) == 0 {
-		return model.OrderResponse{}, nil
+		return model.OrderResponse{
+			ID:          int64(orderId),
+			OrderDetail: []model.OrderDetailResponse{},
+			Total:       0,
+		}, nil
 	}
 
 	// Return the first OrderResponse
@@ -147,8 +153,8 @@ func (r *orderRepository) RemoveFromCart(orderID, bookID int) error {
 	return nil
 }
 
-// GetPaidOrder retrieves all paid orders for a specific customer
-func (r *orderRepository) GetPaidOrder(customerID int) ([]model.OrderResponse, error) {
+// GetOrderHistory retrieves all paid orders for a specific customer
+func (r *orderRepository) GetOrderHistory(customerID int) ([]model.OrderResponse, error) {
 	query := `SELECT o.id, o.total,
 			  d.id AS detail_id, d.book_id, d.quantity, d.subtotal,
 			  b.title, b.author, b.price
@@ -196,6 +202,42 @@ func (r *orderRepository) CreateOrderIfNotExists(customerID int) (int, error) {
 		return 0, err
 	}
 	return id, nil
+}
+
+func (r *orderRepository) PayOrder(customerID int) error {
+	// Begin a transaction
+	tx, err := r.db.Begin()
+	if err != nil {
+		log.Printf("could not start transaction: %v", err)
+		return err
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			log.Println("Recovered from panic, rolling back transaction")
+			tx.Rollback()
+		}
+	}()
+
+	// Update the order state to indicate it has been paid for the first order that matches the customerID
+	_, err = tx.Exec(`
+    UPDATE orders
+    SET order_state = 2, updated_at = NOW()
+    WHERE customer_id = $1 AND order_state = 1
+    RETURNING id;`, customerID) // Only update if the current state is 1
+	if err != nil {
+		tx.Rollback()
+		log.Printf("error updating order state: %v", err)
+		return err
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		log.Printf("could not commit transaction: %v", err)
+		return fmt.Errorf("could not commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 func (r *orderRepository) RecalculateTotalPrice(tx *sql.Tx, orderID int) error {

@@ -17,6 +17,25 @@ func NewOrderHandler(service service.OrderService) *OrderHandler {
 	return &OrderHandler{service: service}
 }
 
+func (h *OrderHandler) PayOrder(c *gin.Context) {
+	// Get the customer ID from the JWT token
+	customerID, err := utils.ExtractCustomerID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	err = h.service.PayOrder(customerID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Order paid",
+	})
+}
+
 func (h *OrderHandler) GetCart(c *gin.Context) {
 	// Get the customer ID from the JWT token
 	customerID, err := utils.ExtractCustomerID(c)
@@ -25,7 +44,13 @@ func (h *OrderHandler) GetCart(c *gin.Context) {
 		return
 	}
 
-	response, err := h.service.GetCart(customerID)
+	orderId, err := h.service.CreateOrderIfNotExists(customerID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	response, err := h.service.GetCart(orderId)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -102,6 +127,6 @@ func (h *OrderHandler) AddToCart(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Book added to cart",
+		"message": "Cart updated",
 	})
 }
