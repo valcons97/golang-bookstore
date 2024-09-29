@@ -17,8 +17,57 @@ func NewOrderHandler(service service.OrderService) *OrderHandler {
 	return &OrderHandler{service: service}
 }
 
-func (h *OrderHandler) AddBookToOrder(c *gin.Context) {
-	var request model.AddOrderRequest
+func (h *OrderHandler) GetCart(c *gin.Context) {
+	// Get the customer ID from the JWT token
+	customerID, err := utils.ExtractCustomerID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	response, err := h.service.GetCart(customerID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
+	// Get the customer ID from the JWT token
+	var request model.RemoveItemFromCartRequest
+	customerID, err := utils.ExtractCustomerID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	orderId, err := h.service.CreateOrderIfNotExists(customerID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = h.service.RemoveFromCart(orderId, int(request.BookId))
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Book removed from cart",
+	})
+}
+
+func (h *OrderHandler) AddToCart(c *gin.Context) {
+	var request model.AddToCartRequest
 
 	// Get the customer ID from the JWT token
 	customerID, err := utils.ExtractCustomerID(c)
@@ -33,14 +82,14 @@ func (h *OrderHandler) AddBookToOrder(c *gin.Context) {
 		return
 	}
 
-	subTotal := request.Price * float64(request.Quantity)
-
 	orderId, err := h.service.CreateOrderIfNotExists(customerID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	subTotal := request.Price * float64(request.Quantity)
 
 	// Ensure that orderDetail.OrderID is set to the appropriate order ID
 	if err := h.service.AddToCart(

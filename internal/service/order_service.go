@@ -10,6 +10,7 @@ type OrderService interface {
 	GetCart(customerID int) (model.OrderResponse, error)
 	GetPaidOrder(customerID int) ([]model.OrderResponse, error)
 	CreateOrderIfNotExists(customerID int) (int, error)
+	RemoveFromCart(orderId int, bookId int) error
 }
 
 type orderService struct {
@@ -37,4 +38,9 @@ func (s *orderService) GetCart(customerID int) (model.OrderResponse, error) {
 // GetPaidOrder implements OrderService.
 func (s *orderService) GetPaidOrder(customerID int) ([]model.OrderResponse, error) {
 	return s.repository.GetPaidOrder(customerID)
+}
+
+// GetCart implements OrderService.
+func (s *orderService) RemoveFromCart(orderId int, bookId int) error {
+	return s.repository.RemoveFromCart(orderId, bookId)
 }

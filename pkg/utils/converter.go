@@ -35,7 +35,7 @@ func ConvertToDetailResponse(rows *sql.Rows) ([]model.OrderResponse, error) {
 
 	for rows.Next() {
 		var orderID, detailID, bookID, quantity int
-		var total, subtotal, price float64
+		var total, subtotal, price int64
 		var title, author string
 
 		err := rows.Scan(
@@ -58,7 +58,7 @@ func ConvertToDetailResponse(rows *sql.Rows) ([]model.OrderResponse, error) {
 			orderMap[orderID] = &model.OrderResponse{
 				ID:          (int64(orderID)),
 				OrderDetail: []model.OrderDetailResponse{},
-				Total:       total,
+				Total:       *ConvertToDisplayPrice(&total),
 			}
 		}
 
@@ -67,7 +67,7 @@ func ConvertToDetailResponse(rows *sql.Rows) ([]model.OrderResponse, error) {
 			ID:     bookID,
 			Title:  title,
 			Author: author,
-			Price:  price,
+			Price:  *ConvertToDisplayPrice(&price),
 		}
 
 		// Create a new OrderDetailResponse entry
@@ -75,7 +75,7 @@ func ConvertToDetailResponse(rows *sql.Rows) ([]model.OrderResponse, error) {
 			ID:       (int64(detailID)),
 			Book:     []model.Book{book}, // Assuming multiple books could be part of order details
 			Quantity: (int64(quantity)),
-			Subtotal: subtotal,
+			Subtotal: *ConvertToDisplayPrice(&subtotal),
 		}
 
 		// Append the order details to the corresponding order

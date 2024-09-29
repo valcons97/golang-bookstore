@@ -48,7 +48,7 @@ func (r *orderRepository) GetCart(customerID int) (model.OrderResponse, error) {
 
 	// Check if the cart slice is empty
 	if len(cart) == 0 {
-		return model.OrderResponse{}, fmt.Errorf("cart is empty")
+		return model.OrderResponse{}, nil
 	}
 
 	// Return the first OrderResponse
