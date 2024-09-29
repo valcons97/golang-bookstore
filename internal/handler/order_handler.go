@@ -59,6 +59,23 @@ func (h *OrderHandler) GetCart(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func (h *OrderHandler) GetOrderHistory(c *gin.Context) {
+	// Get the customer ID from the JWT token
+	customerID, err := utils.ExtractCustomerID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	response, err := h.service.GetOrderHistory(customerID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
 func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
 	// Get the customer ID from the JWT token
 	var request model.RemoveItemFromCartRequest
