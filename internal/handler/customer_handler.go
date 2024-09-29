@@ -4,7 +4,6 @@ import (
 	"bookstore/internal/model"
 	"bookstore/internal/service"
 	"bookstore/pkg/utils"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -63,20 +62,18 @@ func (h *CustomerHandler) Register(c *gin.Context) {
 	var request model.Customer
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		ErrorHandler(c, http.StatusBadRequest, "Invalid input data")
+		ErrorHandler(c, http.StatusBadRequest, "")
 		return
 	}
 
 	hashedPassword, err := utils.HashPassword(request.Password)
 	if err != nil {
-		log.Printf("[Register]: %v", err)
 		ErrorHandler(c, http.StatusInternalServerError, "Failed")
 		return
 	}
 	request.Password = hashedPassword
 
 	if err := h.Service.Register(&request); err != nil {
-		log.Printf("[Register]: %v", err)
 		ErrorHandler(c, http.StatusInternalServerError, "Failed to register customer")
 		return
 	}

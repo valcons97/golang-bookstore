@@ -20,7 +20,7 @@ func NewBookHandler(service service.BookService) *BookHandler {
 func (h *BookHandler) GetBooks(c *gin.Context) {
 	books, err := h.Service.GetBooks()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorHandler(c, http.StatusInternalServerError, "Failed to retrieve books")
 		return
 	}
 
@@ -28,11 +28,15 @@ func (h *BookHandler) GetBooks(c *gin.Context) {
 }
 
 func (h *BookHandler) GetBookById(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	book, err := h.Service.GetBookById(id)
-
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorHandler(c, http.StatusBadRequest, "")
+		return
+	}
+
+	book, err := h.Service.GetBookById(id)
+	if err != nil {
+		ErrorHandler(c, http.StatusNotFound, "Book not found")
 		return
 	}
 
@@ -42,12 +46,11 @@ func (h *BookHandler) GetBookById(c *gin.Context) {
 func (h *BookHandler) CreateBook(c *gin.Context) {
 	var book model.Book
 	if err := c.ShouldBindJSON(&book); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		return
+		ErrorHandler(c, http.StatusBadRequest, "")
 	}
 	id, err := h.Service.CreateBook(&book)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorHandler(c, http.StatusInternalServerError, "Failed to create book")
 		return
 	}
 
@@ -59,12 +62,12 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 func (h *BookHandler) UpdateBook(c *gin.Context) {
 	var book model.Book
 	if err := c.ShouldBindJSON(&book); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		ErrorHandler(c, http.StatusBadRequest, "")
 		return
 	}
 
 	if err := h.Service.UpdateBook(&book); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorHandler(c, http.StatusNotFound, "Book not found")
 		return
 	}
 

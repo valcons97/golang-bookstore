@@ -4,6 +4,7 @@ import (
 	"bookstore/internal/model"
 	"bookstore/pkg/utils"
 	"database/sql"
+	"fmt"
 	"log"
 )
 
@@ -61,7 +62,7 @@ func (c *customerRepository) Register(customer *model.Customer) error {
 
 	if existingCustomer.ID != 0 {
 		log.Printf("[Register] Email already registered: %s", customer.Email)
-		return nil
+		return fmt.Errorf("email registered")
 	} else {
 		query := "INSERT INTO customers (email, password, name, address)  VALUES ($1, $2, $3, $4)"
 		_, err := c.db.Exec(query, customer.Email, customer.Password, customer.Name, customer.Address)
@@ -70,7 +71,6 @@ func (c *customerRepository) Register(customer *model.Customer) error {
 			log.Printf("[Register] Could not register customer: %v", err)
 			return err
 		}
-
 	}
 
 	log.Printf("[Register] Customer registered successfully: %s", customer.Email)

@@ -17,59 +17,75 @@ func NewOrderHandler(service service.OrderService) *OrderHandler {
 }
 
 func (h *OrderHandler) PayOrder(c *gin.Context) {
-	// Get the customer ID from the JWT token
 	customerID, err := utils.ExtractCustomerID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		ErrorHandler(c, http.StatusUnauthorized, "")
 		return
 	}
 
 	err = h.service.PayOrder(customerID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorHandler(
+			c,
+			http.StatusInternalServerError,
+			"Failed to process payment. Please try again later.",
+		)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Order paid",
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "Order paid successfully"})
 }
 
 func (h *OrderHandler) GetCart(c *gin.Context) {
 	// Get the customer ID from the JWT token
 	customerID, err := utils.ExtractCustomerID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		ErrorHandler(c, http.StatusUnauthorized, "")
 		return
 	}
 
 	orderId, err := h.service.CreateOrderIfNotExists(customerID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorHandler(
+			c,
+			http.StatusInternalServerError,
+			"Unable to access cart. Please try again later.",
+		)
+		return
 	}
 
 	response, err := h.service.GetCart(orderId)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorHandler(
+			c,
+			http.StatusInternalServerError,
+			"Unable to retrieve cart. Please try again later.",
+		)
+		return
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
 func (h *OrderHandler) GetOrderHistory(c *gin.Context) {
-	// Get the customer ID from the JWT token
 	customerID, err := utils.ExtractCustomerID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		ErrorHandler(c, http.StatusUnauthorized, "")
 		return
 	}
 
 	response, err := h.service.GetOrderHistory(customerID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorHandler(
+			c,
+			http.StatusInternalServerError,
+			"Unable to retrieve order history. Please try again later.",
+		)
+		return
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -80,26 +96,35 @@ func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
 	var request RemoveItemFromCartRequest
 	customerID, err := utils.ExtractCustomerID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		ErrorHandler(c, http.StatusUnauthorized, "")
 		return
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		ErrorHandler(c, http.StatusBadRequest, "")
 		return
 	}
 
 	orderId, err := h.service.CreateOrderIfNotExists(customerID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorHandler(
+			c,
+			http.StatusInternalServerError,
+			"Unable to access cart. Please try again later.",
+		)
 		return
 	}
 
 	err = h.service.RemoveFromCart(orderId, int(request.BookId))
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorHandler(
+			c,
+			http.StatusInternalServerError,
+			"Unable to remove book from cart. Please try again later.",
+		)
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -110,35 +135,41 @@ func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
 func (h *OrderHandler) AddToCart(c *gin.Context) {
 	var request AddToCartRequest
 
-	// Get the customer ID from the JWT token
 	customerID, err := utils.ExtractCustomerID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		ErrorHandler(c, http.StatusUnauthorized, "")
 		return
 	}
 
-	// Bind the JSON input to request
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		ErrorHandler(c, http.StatusBadRequest, "")
 		return
 	}
 
 	orderId, err := h.service.CreateOrderIfNotExists(customerID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ErrorHandler(
+			c,
+			http.StatusInternalServerError,
+			"Unable to access cart. Please try again later.",
+		)
 		return
 	}
 
 	subTotal := request.Price * float64(request.Quantity)
 
-	// Ensure that orderDetail.OrderID is set to the appropriate order ID
 	if err := h.service.AddToCart(
 		orderId,
 		int(request.BookId),
 		int(request.Quantity),
 		*utils.ConvertStorePrice(&subTotal)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		ErrorHandler(
+			c,
+			http.StatusInternalServerError,
+			"Unable to add book to cart. Please try again later.",
+		)
 		return
 	}
 

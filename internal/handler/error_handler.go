@@ -12,8 +12,12 @@ type ErrorResponse struct {
 }
 
 func ErrorHandler(c *gin.Context, statusCode int, errMsg string) {
+	// Unauthorized error handling
+	if statusCode == http.StatusUnauthorized && errMsg == "" {
+		errMsg = "Unauthorized access. Please log in."
+	}
 
-	// Error related invalid data
+	// Error related to invalid data
 	if statusCode == http.StatusBadRequest && errMsg == "" {
 		errMsg = "Invalid input data"
 	}

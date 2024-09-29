@@ -4,7 +4,7 @@ import (
 	"bookstore/internal/model"
 	converter "bookstore/pkg/utils"
 	"database/sql"
-	"errors"
+	"fmt"
 	"log"
 )
 
@@ -31,6 +31,7 @@ func (r *bookRepository) CreateBook(book *model.Book) (int64, error) {
 	err := r.db.QueryRow(query, book.Title, book.Author, converter.ConvertStorePrice(&book.Price)).
 		Scan(&id)
 	if err != nil {
+		log.Printf("[CreateBook] Error inserting book: %v", err)
 		return 0, err
 	}
 	return id, nil
@@ -41,6 +42,7 @@ func (r *bookRepository) GetBooks() ([]model.Book, error) {
 	query := "SELECT id, title, author, price FROM books"
 	rows, err := r.db.Query(query)
 	if err != nil {
+		log.Printf("[GetBooks] Error retrieving books: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -51,10 +53,15 @@ func (r *bookRepository) GetBooks() ([]model.Book, error) {
 		var price int64
 		err := rows.Scan(&book.ID, &book.Title, &book.Author, &price)
 		if err != nil {
+			log.Printf("[GetBooks] Error scanning book: %v", err)
 			return nil, err
 		}
 		book.Price = *converter.ConvertToDisplayPrice(&price)
 		books = append(books, book)
+	}
+	if err = rows.Err(); err != nil {
+		log.Printf("[GetBooks] Error with rows: %v", err)
+		return nil, err
 	}
 	return books, nil
 }
@@ -69,10 +76,10 @@ func (r *bookRepository) GetBookById(id int) (model.Book, error) {
 	err := row.Scan(&book.ID, &book.Title, &book.Author, &price)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("[GetBookById] book is not found with id : %d", id)
-			return book, errors.New("book not found")
+			log.Printf("[GetBookById] Book not found with id: %d", id)
+			return book, fmt.Errorf("book not found")
 		}
-		log.Printf("[GetBookById] got exception for id : %d , and e: %v", id, err)
+		log.Printf("[GetBookById] Error retrieving book with id: %d, error: %v", id, err)
 		return book, err
 	}
 
@@ -89,9 +96,10 @@ func (r *bookRepository) UpdateBook(book *model.Book) error {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("[UpdateBook] book is not found with id : %d", book.ID)
-			return errors.New("book not found")
+			log.Printf("[UpdateBook] Book not found with id: %d", book.ID)
+			return fmt.Errorf("book not found")
 		}
+		log.Printf("[UpdateBook] Error updating book with id: %d, error: %v", book.ID, err)
 		return err
 	}
 

@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"database/sql"
-	"fmt"
 )
 
 type OrderRepository interface {
@@ -22,12 +21,10 @@ type orderRepository struct {
 	db *sql.DB
 }
 
-// NewOrderRepository creates a new instance of orderRepository
 func NewOrderRepository(db *sql.DB) OrderRepository {
 	return &orderRepository{db: db}
 }
 
-// GetCart implements OrderRepository.
 func (r *orderRepository) GetCart(orderId int) (model.OrderResponse, error) {
 	query := `SELECT o.id, o.total,
 			  d.id AS detail_id, d.book_id, d.quantity, d.subtotal,
@@ -39,12 +36,15 @@ func (r *orderRepository) GetCart(orderId int) (model.OrderResponse, error) {
 
 	rows, err := r.db.Query(query, orderId)
 	if err != nil {
-		log.Printf("Error :%v", err)
-		return model.OrderResponse{}, fmt.Errorf("could not retrieve cart: %w", err)
+		log.Printf("[GetCart] Error retrieving cart: %v", err)
+		return model.OrderResponse{}, err
 	}
+
+	defer rows.Close()
 
 	cart, err := utils.ConvertToDetailResponse(rows)
 	if err != nil {
+		log.Printf("[GetCart] Error converting rows to detail response: %v", err)
 		return model.OrderResponse{}, err
 	}
 
@@ -61,19 +61,21 @@ func (r *orderRepository) GetCart(orderId int) (model.OrderResponse, error) {
 	return cart[0], nil
 }
 
-// AddToCart adds a book to the specified order
-
 func (r *orderRepository) AddOrUpdateCart(orderID, bookID, quantity int, subtotal int64) error {
 	// Begin a transaction
 	tx, err := r.db.Begin()
 	if err != nil {
-		log.Printf("could not start transaction: %v", err)
+		log.Printf(
+			"[AddOrUpdateCart] Could not start transaction for order ID %d: %v",
+			orderID,
+			err,
+		)
 		return err
 	}
 
 	defer func() {
 		if p := recover(); p != nil {
-			log.Println("Recovered from panic, rolling back transaction")
+			log.Println("Recovered from panic, rolling back transaction in AddOrUpdateCart")
 			tx.Rollback()
 		}
 	}()
@@ -88,24 +90,31 @@ func (r *orderRepository) AddOrUpdateCart(orderID, bookID, quantity int, subtota
 	`, orderID, bookID, quantity, subtotal)
 	if err != nil {
 		tx.Rollback()
-		log.Printf("error updating order_details: %v", err)
+		log.Printf(
+			"[AddOrUpdateCart] Error updating order_details for order ID %d: %v",
+			orderID,
+			err,
+		)
 		return err
 	}
 
 	// Recalculate the total for the order
 	if err := r.RecalculateTotalPrice(tx, orderID); err != nil {
 		tx.Rollback()
-		log.Printf("error updating order total: %v", err)
+		log.Printf("[AddOrUpdateCart] Error updating order total for order ID %d: %v", orderID, err)
 		return err
 	}
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
-		log.Printf("could not commit transaction: %v", err)
+		log.Printf(
+			"[AddOrUpdateCart] Could not commit transaction for order ID %d: %v",
+			orderID,
+			err,
+		)
 		return err
 	}
 
-	// Return the updated cart after the book was added
 	return nil
 }
 
@@ -113,14 +122,14 @@ func (r *orderRepository) RemoveFromCart(orderID, bookID int) error {
 	// Begin a transaction to handle potential rollback in case of errors
 	tx, err := r.db.Begin()
 	if err != nil {
-		log.Printf("could not start transaction: %v", err)
-		return fmt.Errorf("could not start transaction: %w", err)
+		log.Printf("[RemoveFromCart] Could not start transaction for order ID %d: %v", orderID, err)
+		return err
 	}
 
 	defer func() {
 		if p := recover(); p != nil {
-			log.Println("Recovered from panic, rolling back transaction")
-			tx.Rollback() // Rollback in case of panic
+			log.Println("Recovered from panic, rolling back transaction in RemoveFromCart")
+			tx.Rollback()
 		}
 	}()
 
@@ -132,24 +141,32 @@ func (r *orderRepository) RemoveFromCart(orderID, bookID int) error {
 	)
 	if err != nil {
 		tx.Rollback()
-		log.Printf("error deleting from order_details: %v", err)
+		log.Printf(
+			"[RemoveFromCart] Error deleting from order_details for order ID %d, book ID %d: %v",
+			orderID,
+			bookID,
+			err,
+		)
 		return err
 	}
 
 	// Recalculate the total for the order
 	if err := r.RecalculateTotalPrice(tx, orderID); err != nil {
 		tx.Rollback()
-		log.Printf("error updating order total: %v", err)
+		log.Printf("[RemoveFromCart] Error updating order total for order ID %d: %v", orderID, err)
 		return err
 	}
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
-		log.Printf("could not commit transaction: %v", err)
-		return fmt.Errorf("could not commit transaction: %w", err)
+		log.Printf(
+			"[RemoveFromCart] Could not commit transaction for order ID %d: %v",
+			orderID,
+			err,
+		)
+		return err
 	}
 
-	// Return the updated cart (after the book was removed)
 	return nil
 }
 
@@ -165,29 +182,33 @@ func (r *orderRepository) GetOrderHistory(customerID int) ([]model.OrderResponse
 
 	rows, err := r.db.Query(query, customerID)
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve paid orders: %w", err)
+		log.Printf(
+			"[GetOrderHistory] Error retrieving paid orders for customer ID %d: %v",
+			customerID,
+			err,
+		)
+		return nil, err
 	}
 
-	// Use the productConverter function
+	defer rows.Close()
+
 	return utils.ConvertToDetailResponse(rows)
 }
 
-// CreateOrderIfNotExists checks if an order exists and creates a new one if it doesn't
 func (r *orderRepository) CreateOrderIfNotExists(customerID int) (int, error) {
 	var id int
 
-	// First, check if an order already exists for the customer
 	err := r.db.QueryRow(`
 		SELECT id FROM orders
 		WHERE customer_id = $1 AND order_state = 1
 	`, customerID).Scan(&id)
 
 	if err == nil {
-		// If no error, return the existing order ID
+
 		return id, nil
 	} else if err != sql.ErrNoRows {
 		// If there's another error, log and return it
-		log.Printf("Error checking for existing order: %v", err)
+		log.Printf("[CreateOrderIfNotExists] Error checking for existing order for customer ID %d: %v", customerID, err)
 		return 0, err
 	}
 
@@ -198,7 +219,11 @@ func (r *orderRepository) CreateOrderIfNotExists(customerID int) (int, error) {
 	RETURNING id;`
 
 	if err := r.db.QueryRow(query, customerID).Scan(&id); err != nil {
-		log.Printf("Error creating order: %v", err)
+		log.Printf(
+			"[CreateOrderIfNotExists] Error creating order for customer ID %d: %v",
+			customerID,
+			err,
+		)
 		return 0, err
 	}
 	return id, nil
@@ -208,13 +233,13 @@ func (r *orderRepository) PayOrder(customerID int) error {
 	// Begin a transaction
 	tx, err := r.db.Begin()
 	if err != nil {
-		log.Printf("could not start transaction: %v", err)
+		log.Printf("[PayOrder] Could not start transaction for customer ID %d: %v", customerID, err)
 		return err
 	}
 
 	defer func() {
 		if p := recover(); p != nil {
-			log.Println("Recovered from panic, rolling back transaction")
+			log.Println("Recovered from panic, rolling back transaction in PayOrder")
 			tx.Rollback()
 		}
 	}()
@@ -227,14 +252,18 @@ func (r *orderRepository) PayOrder(customerID int) error {
     RETURNING id;`, customerID) // Only update if the current state is 1
 	if err != nil {
 		tx.Rollback()
-		log.Printf("error updating order state: %v", err)
+		log.Printf("[PayOrder] Error updating order state for customer ID %d: %v", customerID, err)
 		return err
 	}
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
-		log.Printf("could not commit transaction: %v", err)
-		return fmt.Errorf("could not commit transaction: %w", err)
+		log.Printf(
+			"[PayOrder] Could not commit transaction for customer ID %d: %v",
+			customerID,
+			err,
+		)
+		return err
 	}
 
 	return nil
@@ -248,5 +277,13 @@ func (r *orderRepository) RecalculateTotalPrice(tx *sql.Tx, orderID int) error {
 		WHERE d.order_id = $1)
 		UPDATE orders o SET total = (SELECT total_sum FROM subtotal_sum), updated_at = NOW()
 		WHERE o.id = $1`, orderID)
+
+	if err != nil {
+		log.Printf(
+			"[RecalculateTotalPrice] Error recalculating total price for order ID %d: %v",
+			orderID,
+			err,
+		)
+	}
 	return err
 }

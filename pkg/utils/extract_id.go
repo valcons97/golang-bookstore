@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -13,7 +13,7 @@ func ExtractCustomerID(c *gin.Context) (int, error) {
 	// Get the token from the Authorization header
 	tokenString := c.Request.Header.Get("Authorization")
 	if tokenString == "" {
-		return 0, errors.New("no token provided")
+		return 0, fmt.Errorf("no token provided")
 	}
 
 	// Split the token string to get the actual token
@@ -22,13 +22,13 @@ func ExtractCustomerID(c *gin.Context) (int, error) {
 	// Parse the token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid token")
+			return nil, fmt.Errorf("invalid token")
 		}
 		return []byte(os.Getenv("SECRET_KEY")), nil
 	})
 
 	if err != nil || !token.Valid {
-		return 0, errors.New("invalid token")
+		return 0, fmt.Errorf("invalid token")
 	}
 
 	// Extract the claims
@@ -37,5 +37,5 @@ func ExtractCustomerID(c *gin.Context) (int, error) {
 		return customerID, nil
 	}
 
-	return 0, errors.New("invalid token claims")
+	return 0, fmt.Errorf("invalid token claims")
 }
