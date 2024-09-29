@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"bookstore/internal/model"
 	"bookstore/internal/service"
 	"bookstore/pkg/utils"
 	"net/http"
@@ -78,7 +77,7 @@ func (h *OrderHandler) GetOrderHistory(c *gin.Context) {
 
 func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
 	// Get the customer ID from the JWT token
-	var request model.RemoveItemFromCartRequest
+	var request RemoveItemFromCartRequest
 	customerID, err := utils.ExtractCustomerID(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -109,7 +108,7 @@ func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
 }
 
 func (h *OrderHandler) AddToCart(c *gin.Context) {
-	var request model.AddToCartRequest
+	var request AddToCartRequest
 
 	// Get the customer ID from the JWT token
 	customerID, err := utils.ExtractCustomerID(c)

@@ -4,7 +4,6 @@ import (
 	"bookstore/internal/model"
 	"bookstore/pkg/utils"
 	"database/sql"
-	"errors"
 	"log"
 )
 
@@ -32,19 +31,16 @@ func (c *customerRepository) Login(email string, password string) (*model.Custom
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.New("Invalid Email or Password")
+			log.Printf("[Login] Invalid email or password for email: %s", email)
+			return nil, nil
 		}
+		log.Printf("[Login] Error querying customer: %v", err)
 		return nil, err
 	}
 
-	// Here you should compare the provided password with the stored password
-	// assuming you have a function `CheckPassword` to verify the password
-
-	log.Printf("[Login] password e: %v", password)
-	log.Printf("[Login] db pass e: %v", customer.Password)
-
 	if !utils.CheckPassword(password, customer.Password) {
-		return nil, errors.New("Invalid Email or Password")
+		log.Printf("[Login] Password mismatch for email: %s", email)
+		return nil, nil
 	}
 
 	return &customer, nil
@@ -59,24 +55,24 @@ func (c *customerRepository) Register(customer *model.Customer) error {
 	err := c.db.QueryRow(queryCheck, customer.Email).Scan(existingCustomer.ID)
 
 	if err != nil && err != sql.ErrNoRows {
-		log.Printf("[Register] something went wrong when checking e: %v", err)
+		log.Printf("[Register] Error checking existing customer: %v", err)
 		return err
 	}
 
-	log.Printf("[Register] password e: %v", customer.Password)
-
 	if existingCustomer.ID != 0 {
-		return errors.New("Email already registered")
+		log.Printf("[Register] Email already registered: %s", customer.Email)
+		return nil
 	} else {
 		query := "INSERT INTO customers (email, password, name, address)  VALUES ($1, $2, $3, $4)"
 		_, err := c.db.Exec(query, customer.Email, customer.Password, customer.Name, customer.Address)
 
 		if err != nil {
-			log.Printf("[Register] Could not register customer with e: %v", err)
+			log.Printf("[Register] Could not register customer: %v", err)
 			return err
 		}
 
 	}
 
+	log.Printf("[Register] Customer registered successfully: %s", customer.Email)
 	return nil
 }

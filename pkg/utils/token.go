@@ -8,12 +8,12 @@ import (
 )
 
 type Claims struct {
-	ID    int    `json:"id"`
+	ID    int64  `json:"id"`
 	Email string `json:"email"`
 	jwt.StandardClaims
 }
 
-func GenerateToken(userID int, email string) (string, error) {
+func GenerateToken(userID int64, email string) (string, error) {
 	claims := Claims{
 		ID:    userID,
 		Email: email,

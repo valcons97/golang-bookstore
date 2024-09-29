@@ -1,4 +1,9 @@
-package model
+package handler
+
+type LoginRequest struct {
+	Email    string `json:"email"    binding:"required,email"` // Email field with validation
+	Password string `json:"password" binding:"required"`       // Password field with validation
+}
 
 type AddToCartRequest struct {
 	BookId   int64   `json:"bookId"   binding:"required"`

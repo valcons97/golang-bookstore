@@ -33,7 +33,7 @@ func ExtractCustomerID(c *gin.Context) (int, error) {
 
 	// Extract the claims
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		customerID := int(claims["id"].(float64)) // Assumes ID is stored as float64
+		customerID := int(claims["id"].(float64))
 		return customerID, nil
 	}
 

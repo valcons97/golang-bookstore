@@ -9,7 +9,7 @@ import (
 )
 
 type BookRepository interface {
-	CreateBook(book *model.Book) (int, error)
+	CreateBook(book *model.Book) (int64, error)
 	GetBooks() ([]model.Book, error)
 	GetBookById(id int) (model.Book, error)
 	UpdateBook(book *model.Book) error
@@ -24,8 +24,8 @@ func NewBookRepository(db *sql.DB) BookRepository {
 }
 
 // Add new book to the database.
-func (r *bookRepository) CreateBook(book *model.Book) (int, error) {
-	var id int
+func (r *bookRepository) CreateBook(book *model.Book) (int64, error) {
+	var id int64
 
 	query := "INSERT INTO books (title, author, price) VALUES ($1, $2, $3) RETURNING ID"
 	err := r.db.QueryRow(query, book.Title, book.Author, converter.ConvertStorePrice(&book.Price)).

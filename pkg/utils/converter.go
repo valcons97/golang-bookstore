@@ -34,7 +34,8 @@ func ConvertToDetailResponse(rows *sql.Rows) ([]model.OrderResponse, error) {
 	orderMap := make(map[int]*model.OrderResponse)
 
 	for rows.Next() {
-		var orderID, detailID, bookID, quantity int
+		var orderID, detailID, quantity int
+		var bookID int64
 		var total, subtotal, price int64
 		var title, author string
 
@@ -73,21 +74,18 @@ func ConvertToDetailResponse(rows *sql.Rows) ([]model.OrderResponse, error) {
 		// Create a new OrderDetailResponse entry
 		orderDetail := model.OrderDetailResponse{
 			ID:       (int64(detailID)),
-			Book:     []model.Book{book}, // Assuming multiple books could be part of order details
+			Book:     []model.Book{book},
 			Quantity: (int64(quantity)),
 			Subtotal: *ConvertToDisplayPrice(&subtotal),
 		}
 
-		// Append the order details to the corresponding order
 		orderMap[orderID].OrderDetail = append(orderMap[orderID].OrderDetail, orderDetail)
 	}
 
-	// Convert the map to a slice
 	for _, order := range orderMap {
 		orders = append(orders, *order)
 	}
 
-	// Check for errors during row iteration
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("could not retrieve orders: %w", err)
 	}

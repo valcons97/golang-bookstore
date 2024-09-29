@@ -19,23 +19,22 @@ func NewCustomerHandler(service service.CustomerService) *CustomerHandler {
 }
 
 func (h *CustomerHandler) Login(c *gin.Context) {
-	var request model.LoginRequest
+	var request LoginRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
+		ErrorHandler(c, http.StatusBadRequest, "")
 		return
 	}
 
 	// Check if email or password is empty
 	if request.Email == "" || request.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email or password cannot be empty"})
+		ErrorHandler(c, http.StatusBadRequest, "Email or password cannot be empty")
 		return
 	}
 
 	customer, err := h.Service.Login(request.Email, request.Password)
 	if err != nil {
-		log.Printf("[Login]: %v", err)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err})
+		ErrorHandler(c, http.StatusUnauthorized, "Invalid email or password")
 		return
 	}
 
@@ -44,8 +43,7 @@ func (h *CustomerHandler) Login(c *gin.Context) {
 		customer.Email,
 	)
 	if err != nil {
-		log.Printf("[Login]: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		ErrorHandler(c, http.StatusInternalServerError, "Failed to generate token")
 		return
 	}
 
@@ -65,19 +63,21 @@ func (h *CustomerHandler) Register(c *gin.Context) {
 	var request model.Customer
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input data"})
+		ErrorHandler(c, http.StatusBadRequest, "Invalid input data")
 		return
 	}
 
 	hashedPassword, err := utils.HashPassword(request.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		log.Printf("[Register]: %v", err)
+		ErrorHandler(c, http.StatusInternalServerError, "Failed")
 		return
 	}
 	request.Password = hashedPassword
 
 	if err := h.Service.Register(&request); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register customer"})
+		log.Printf("[Register]: %v", err)
+		ErrorHandler(c, http.StatusInternalServerError, "Failed to register customer")
 		return
 	}
 
