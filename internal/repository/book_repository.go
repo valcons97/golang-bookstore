@@ -11,7 +11,7 @@ import (
 type BookRepository interface {
 	CreateBook(book *model.Book) (int64, error)
 	GetBooks() ([]model.Book, error)
-	GetBookById(id int) (model.Book, error)
+	GetBookById(id int) (*model.Book, error)
 	UpdateBook(book *model.Book) error
 }
 
@@ -67,7 +67,7 @@ func (r *bookRepository) GetBooks() ([]model.Book, error) {
 }
 
 // Retrieve a single book define by its id
-func (r *bookRepository) GetBookById(id int) (model.Book, error) {
+func (r *bookRepository) GetBookById(id int) (*model.Book, error) {
 	var book model.Book
 	var price int64
 	query := "SELECT id, title, author, price FROM books WHERE id = $1"
@@ -77,14 +77,14 @@ func (r *bookRepository) GetBookById(id int) (model.Book, error) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Printf("[GetBookById] Book not found with id: %d", id)
-			return book, fmt.Errorf("book not found")
+			return &book, fmt.Errorf("book not found")
 		}
 		log.Printf("[GetBookById] Error retrieving book with id: %d, error: %v", id, err)
-		return book, err
+		return &book, err
 	}
 
 	book.Price = *converter.ConvertToDisplayPrice(&price)
-	return book, nil
+	return &book, nil
 }
 
 // UpdateBook implements Repository.

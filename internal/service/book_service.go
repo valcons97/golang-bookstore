@@ -8,7 +8,7 @@ import (
 type BookService interface {
 	CreateBook(book *model.Book) (int64, error)
 	GetBooks() ([]model.Book, error)
-	GetBookById(id int) (model.Book, error)
+	GetBookById(id int) (*model.Book, error)
 	UpdateBook(book *model.Book) error
 }
 
@@ -26,7 +26,7 @@ func (s *bookService) CreateBook(book *model.Book) (int64, error) {
 }
 
 // GetBookById implements Service.
-func (s *bookService) GetBookById(id int) (model.Book, error) {
+func (s *bookService) GetBookById(id int) (*model.Book, error) {
 	return s.repository.GetBookById(id)
 }
 

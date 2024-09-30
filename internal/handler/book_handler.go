@@ -47,6 +47,7 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 	var book model.Book
 	if err := c.ShouldBindJSON(&book); err != nil {
 		ErrorHandler(c, http.StatusBadRequest, "")
+		return
 	}
 	id, err := h.Service.CreateBook(&book)
 	if err != nil {
