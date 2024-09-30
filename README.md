@@ -52,4 +52,6 @@ golang-bookstore/
 
 mockgen -source=./pkg/book/service.go -destination=./pkg/book/mock_service.go -package=book
 
-mockgen -source=internal/service/book_service.go -destination=mocks/mock_book_service.go -package=mocks
+mockgen -source=internal/service/book_service.go -destination=test/mocks/mock_book_service.go -package=mocks
+
+mockgen -source=internal/service/customer_service.go -destination=test/mocks/mock_customer_service.go -package=mocks
