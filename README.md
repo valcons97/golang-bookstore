@@ -55,3 +55,9 @@ mockgen -source=./pkg/book/service.go -destination=./pkg/book/mock_service.go -p
 mockgen -source=internal/service/book_service.go -destination=test/mocks/mock_book_service.go -package=mocks
 
 mockgen -source=internal/service/customer_service.go -destination=test/mocks/mock_customer_service.go -package=mocks
+
+mockgen -source=internal/service/order_service.go -destination=test/mocks/mock_order_service.go -package=mocks
+
+go test ./...
+
+go test ./... -race -count=5

@@ -51,7 +51,8 @@ func TestCustomerHandler_Login(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var actualResponse gin.H
-		json.Unmarshal(w.Body.Bytes(), &actualResponse)
+		err := json.Unmarshal(w.Body.Bytes(), &actualResponse)
+		assert.NoError(t, err)
 
 		assert.Equal(t, "Login successful", actualResponse["message"])
 		assert.Equal(t, token, actualResponse["token"])
@@ -113,7 +114,8 @@ func TestCustomerHandler_Register(t *testing.T) {
 		assert.Equal(t, http.StatusCreated, w.Code)
 		expectedResponse := gin.H{"message": "Customer registered successfully"}
 		var actualResponse gin.H
-		json.Unmarshal(w.Body.Bytes(), &actualResponse)
+		err := json.Unmarshal(w.Body.Bytes(), &actualResponse)
+		assert.NoError(t, err)
 		assert.Equal(t, expectedResponse, actualResponse)
 	})
 

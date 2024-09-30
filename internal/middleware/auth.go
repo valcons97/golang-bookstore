@@ -32,7 +32,6 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		// Validate the token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// Validate the algorithm
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, http.ErrNotSupported
 			}
@@ -45,7 +44,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Token is valid, proceed to the next handler
 		c.Next()
 	}
 }

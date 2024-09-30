@@ -2,7 +2,8 @@ package repository
 
 import (
 	"bookstore/internal/model"
-	converter "bookstore/pkg/utils"
+	"bookstore/pkg/utils"
+
 	"database/sql"
 	"fmt"
 	"log"
@@ -28,7 +29,7 @@ func (r *bookRepository) CreateBook(book *model.Book) (int64, error) {
 	var id int64
 
 	query := "INSERT INTO books (title, author, price) VALUES ($1, $2, $3) RETURNING ID"
-	err := r.db.QueryRow(query, book.Title, book.Author, converter.ConvertStorePrice(&book.Price)).
+	err := r.db.QueryRow(query, book.Title, book.Author, utils.ConvertStorePrice(&book.Price)).
 		Scan(&id)
 	if err != nil {
 		log.Printf("[CreateBook] Error inserting book: %v", err)
@@ -56,7 +57,7 @@ func (r *bookRepository) GetBooks() ([]model.Book, error) {
 			log.Printf("[GetBooks] Error scanning book: %v", err)
 			return nil, err
 		}
-		book.Price = *converter.ConvertToDisplayPrice(&price)
+		book.Price = *utils.ConvertToDisplayPrice(&price)
 		books = append(books, book)
 	}
 	if err = rows.Err(); err != nil {
@@ -83,7 +84,7 @@ func (r *bookRepository) GetBookById(id int) (*model.Book, error) {
 		return &book, err
 	}
 
-	book.Price = *converter.ConvertToDisplayPrice(&price)
+	book.Price = *utils.ConvertToDisplayPrice(&price)
 	return &book, nil
 }
 
@@ -91,7 +92,7 @@ func (r *bookRepository) GetBookById(id int) (*model.Book, error) {
 func (r *bookRepository) UpdateBook(book *model.Book) error {
 	var updateId int
 	query := "UPDATE books SET title = $1, author = $2, price = $3 WHERE id = $4 RETURNING id"
-	err := r.db.QueryRow(query, book.Title, book.Author, converter.ConvertStorePrice(&book.Price), book.ID).
+	err := r.db.QueryRow(query, book.Title, book.Author, utils.ConvertStorePrice(&book.Price), book.ID).
 		Scan(&updateId)
 
 	if err != nil {
