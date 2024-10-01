@@ -4,6 +4,8 @@ import (
 	"bookstore/internal/model"
 	"bookstore/internal/repository"
 	"bookstore/pkg/utils"
+	"database/sql"
+	"errors"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -15,22 +17,29 @@ func TestCreateBook(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	repo := repository.NewBookRepository(db)
+	bookRepo := repository.NewBookRepository(db)
 
-	book := &model.Book{
-		Title:  "Test Book",
-		Author: "Test Author",
-		Price:  9.99,
-	}
+	t.Run("success", func(t *testing.T) {
+		book := &model.Book{Title: "Test Book", Author: "Author", Price: 10.5}
+		mock.ExpectQuery("INSERT INTO books").
+			WithArgs(book.Title, book.Author, utils.ConvertStorePrice(&book.Price)).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
-	query := "INSERT INTO books \\(title, author, price\\) VALUES \\(\\$1, \\$2, \\$3\\) RETURNING ID"
-	mock.ExpectQuery(query).
-		WithArgs(book.Title, book.Author, utils.ConvertStorePrice(&book.Price)).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+		id, err := bookRepo.CreateBook(book)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), id)
+	})
 
-	id, err := repo.CreateBook(book)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(1), id)
+	t.Run("error on insert", func(t *testing.T) {
+		book := &model.Book{Title: "Test Book", Author: "Author", Price: 10.5}
+		mock.ExpectQuery("INSERT INTO books").
+			WithArgs(book.Title, book.Author, utils.ConvertStorePrice(&book.Price)).
+			WillReturnError(errors.New("insert error"))
+
+		id, err := bookRepo.CreateBook(book)
+		assert.Error(t, err)
+		assert.Equal(t, int64(0), id)
+	})
 }
 
 func TestGetBooks(t *testing.T) {
@@ -38,21 +47,28 @@ func TestGetBooks(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	repo := repository.NewBookRepository(db)
+	bookRepo := repository.NewBookRepository(db)
 
-	rows := sqlmock.NewRows([]string{"id", "title", "author", "price"}).
-		AddRow(1, "Test Book", "Test Author", 999).
-		AddRow(2, "Another Book", "Another Author", 1299)
+	t.Run("success", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "title", "author", "price"}).
+			AddRow(1, "Book 1", "Author 1", 1000).
+			AddRow(2, "Book 2", "Author 2", 2000)
+		mock.ExpectQuery("SELECT id, title, author, price FROM books").
+			WillReturnRows(rows)
 
-	query := "SELECT id, title, author, price FROM books"
-	mock.ExpectQuery(query).WillReturnRows(rows)
+		books, err := bookRepo.GetBooks()
+		assert.NoError(t, err)
+		assert.Len(t, books, 2)
+	})
 
-	books, err := repo.GetBooks()
-	assert.NoError(t, err)
-	assert.Len(t, books, 2)
+	t.Run("error on query", func(t *testing.T) {
+		mock.ExpectQuery("SELECT id, title, author, price FROM books").
+			WillReturnError(errors.New("query error"))
 
-	assert.Equal(t, "Test Book", books[0].Title)
-	assert.Equal(t, "Another Book", books[1].Title)
+		books, err := bookRepo.GetBooks()
+		assert.Error(t, err)
+		assert.Nil(t, books)
+	})
 }
 
 func TestGetBookById(t *testing.T) {
@@ -60,19 +76,40 @@ func TestGetBookById(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	repo := repository.NewBookRepository(db)
+	bookRepo := repository.NewBookRepository(db)
 
-	bookID := 1
-	row := sqlmock.NewRows([]string{"id", "title", "author", "price"}).
-		AddRow(1, "Test Book", "Test Author", 999)
+	t.Run("success", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "title", "author", "price"}).
+			AddRow(1, "Test Book", "Author", 1000)
+		mock.ExpectQuery("SELECT id, title, author, price FROM books WHERE id =").
+			WithArgs(1).
+			WillReturnRows(rows)
 
-	query := "SELECT id, title, author, price FROM books WHERE id = \\$1"
-	mock.ExpectQuery(query).WithArgs(bookID).WillReturnRows(row)
+		book, err := bookRepo.GetBookById(1)
+		assert.NoError(t, err)
+		assert.Equal(t, "Test Book", book.Title)
+	})
 
-	book, err := repo.GetBookById(bookID)
-	assert.NoError(t, err)
-	assert.NotNil(t, book)
-	assert.Equal(t, "Test Book", book.Title)
+	t.Run("book not found", func(t *testing.T) {
+		mock.ExpectQuery("SELECT id, title, author, price FROM books WHERE id =").
+			WithArgs(1).
+			WillReturnError(sql.ErrNoRows)
+
+		book, err := bookRepo.GetBookById(1)
+		assert.Error(t, err)
+		assert.Equal(t, "book not found", err.Error())
+		assert.Equal(t, int64(0), book.ID)
+	})
+
+	t.Run("error on query", func(t *testing.T) {
+		mock.ExpectQuery("SELECT id, title, author, price FROM books WHERE id =").
+			WithArgs(1).
+			WillReturnError(errors.New("query error"))
+
+		book, err := bookRepo.GetBookById(1)
+		assert.Error(t, err)
+		assert.Equal(t, int64(0), book.ID)
+	})
 }
 
 func TestUpdateBook(t *testing.T) {
@@ -80,20 +117,36 @@ func TestUpdateBook(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	repo := repository.NewBookRepository(db)
+	bookRepo := repository.NewBookRepository(db)
 
-	book := &model.Book{
-		ID:     1,
-		Title:  "Updated Title",
-		Author: "Updated Author",
-		Price:  15.99,
-	}
+	t.Run("success", func(t *testing.T) {
+		book := &model.Book{ID: 1, Title: "Updated Book", Author: "Updated Author", Price: 20.0}
+		mock.ExpectQuery("UPDATE books SET").
+			WithArgs(book.Title, book.Author, utils.ConvertStorePrice(&book.Price), book.ID).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
-	query := "UPDATE books SET title = \\$1, author = \\$2, price = \\$3 WHERE id = \\$4 RETURNING id"
-	mock.ExpectQuery(query).
-		WithArgs(book.Title, book.Author, utils.ConvertStorePrice(&book.Price), book.ID).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+		err := bookRepo.UpdateBook(book)
+		assert.NoError(t, err)
+	})
 
-	err = repo.UpdateBook(book)
-	assert.NoError(t, err)
+	t.Run("book not found", func(t *testing.T) {
+		book := &model.Book{ID: 1, Title: "Updated Book", Author: "Updated Author", Price: 20.0}
+		mock.ExpectQuery("UPDATE books SET").
+			WithArgs(book.Title, book.Author, utils.ConvertStorePrice(&book.Price), book.ID).
+			WillReturnError(sql.ErrNoRows)
+
+		err := bookRepo.UpdateBook(book)
+		assert.Error(t, err)
+		assert.Equal(t, "book not found", err.Error())
+	})
+
+	t.Run("error on update", func(t *testing.T) {
+		book := &model.Book{ID: 1, Title: "Updated Book", Author: "Updated Author", Price: 20.0}
+		mock.ExpectQuery("UPDATE books SET").
+			WithArgs(book.Title, book.Author, utils.ConvertStorePrice(&book.Price), book.ID).
+			WillReturnError(errors.New("update error"))
+
+		err := bookRepo.UpdateBook(book)
+		assert.Error(t, err)
+	})
 }

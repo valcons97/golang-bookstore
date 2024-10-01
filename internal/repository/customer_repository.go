@@ -25,7 +25,6 @@ func NewCustomerRepository(db *sql.DB) CustomerRepository {
 func (c *customerRepository) Login(email string, password string) (*model.Customer, error) {
 	var customer model.Customer
 
-	// Query the database for the customer with the given email
 	query := `SELECT id, email, password, name, address FROM customers WHERE email = $1`
 	err := c.db.QueryRow(query, email).
 		Scan(&customer.ID, &customer.Email, &customer.Password, &customer.Name, &customer.Address)
@@ -33,7 +32,7 @@ func (c *customerRepository) Login(email string, password string) (*model.Custom
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Printf("[Login] Invalid email or password for email: %s", email)
-			return nil, nil
+			return nil, fmt.Errorf("invalid email or password")
 		}
 		log.Printf("[Login] Error querying customer: %v", err)
 		return nil, err
@@ -41,7 +40,7 @@ func (c *customerRepository) Login(email string, password string) (*model.Custom
 
 	if !utils.CheckPassword(password, customer.Password) {
 		log.Printf("[Login] Password mismatch for email: %s", email)
-		return nil, nil
+		return nil, fmt.Errorf("invalid email or password")
 	}
 
 	return &customer, nil
@@ -53,7 +52,7 @@ func (c *customerRepository) Register(customer *model.Customer) error {
 
 	queryCheck := "SELECT id FROM customers WHERE email = $1"
 
-	err := c.db.QueryRow(queryCheck, customer.Email).Scan(existingCustomer.ID)
+	err := c.db.QueryRow(queryCheck, customer.Email).Scan(&existingCustomer.ID)
 
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("[Register] Error checking existing customer: %v", err)

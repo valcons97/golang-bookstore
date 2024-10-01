@@ -217,7 +217,8 @@ func TestOrderHandler_RemoveFromCart(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var actualResponse gin.H
-		json.Unmarshal(w.Body.Bytes(), &actualResponse)
+		err := json.Unmarshal(w.Body.Bytes(), &actualResponse)
+		assert.NoError(t, err)
 		assert.Equal(t, "Book removed from cart", actualResponse["message"])
 	})
 
@@ -269,7 +270,8 @@ func TestOrderHandler_AddToCart(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var actualResponse gin.H
-		json.Unmarshal(w.Body.Bytes(), &actualResponse)
+		err := json.Unmarshal(w.Body.Bytes(), &actualResponse)
+		assert.NoError(t, err)
 		assert.Equal(t, "Cart updated", actualResponse["message"])
 	})
 
