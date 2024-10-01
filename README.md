@@ -37,6 +37,9 @@ golang-bookstore
 
 ## Database Diagram
 
+<img width="640" alt="image" src="https://github.com/user-attachments/assets/4002361a-587a-4331-bb4a-197805d1e98f">
+
+
 ## Project Setup
 
 ### Generating Mocks
