@@ -12,7 +12,7 @@ type OrderRepository interface {
 	AddOrUpdateCart(orderID, bookID, quantity int, subtotal int64) error
 	RemoveFromCart(orderId int, bookId int) error
 	GetCart(orderId int) (model.OrderResponse, error)
-	GetOrderHistory(customerID int) ([]model.OrderResponse, error)
+	GetOrderHistory(customerID, limit, page int) ([]model.OrderResponse, error)
 	CreateOrderIfNotExists(customerID int) (int, error)
 	PayOrder(customerID int) error
 }
@@ -171,16 +171,22 @@ func (r *orderRepository) RemoveFromCart(orderID, bookID int) error {
 }
 
 // GetOrderHistory retrieves all paid orders for a specific customer
-func (r *orderRepository) GetOrderHistory(customerID int) ([]model.OrderResponse, error) {
+func (r *orderRepository) GetOrderHistory(
+	customerID, limit, page int,
+) ([]model.OrderResponse, error) {
 	query := `SELECT o.id, o.total,
 			  d.id AS detail_id, d.book_id, d.quantity, d.subtotal,
 			  b.title, b.author, b.price
-			  FROM orders o
+			  FROM (
+				SELECT * FROM orders
+				WHERE customer_id = $1 AND order_state != 1
+				ORDER BY updated_at ASC
+				LIMIT $2 OFFSET $3
+			  ) o
 			  JOIN order_details d ON o.id = d.order_id
-			  JOIN books b ON d.book_id = b.id
-			  WHERE o.customer_id = $1 AND o.order_state != 1`
+			  JOIN books b ON d.book_id = b.id`
 
-	rows, err := r.db.Query(query, customerID)
+	rows, err := r.db.Query(query, customerID, limit, page*limit)
 	if err != nil {
 		log.Printf(
 			"[GetOrderHistory] Error retrieving paid orders for customer ID %d: %v",
@@ -192,6 +198,7 @@ func (r *orderRepository) GetOrderHistory(customerID int) ([]model.OrderResponse
 
 	defer rows.Close()
 
+	log.Println(rows)
 	return utils.ConvertToDetailResponse(rows)
 }
 

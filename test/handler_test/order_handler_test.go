@@ -128,7 +128,9 @@ func TestOrderHandler_GetOrderHistory(t *testing.T) {
 	router := gin.Default()
 
 	orderHandler := handler.NewOrderHandler(mockOrderService)
-	router.GET("/order-history", orderHandler.GetOrderHistory)
+	router.POST("/history", orderHandler.GetOrderHistory)
+
+	page, limit := 0, 10
 
 	t.Run("success", func(t *testing.T) {
 		customerID := int64(1)
@@ -137,6 +139,9 @@ func TestOrderHandler_GetOrderHistory(t *testing.T) {
 			{ID: 1, Title: "Book 1", Author: "Author 1", Price: 10.0},
 			{ID: 2, Title: "Book 2", Author: "Author 2", Price: 15.0},
 		}
+
+		request := handler.HistoryRequest{Page: page, Limit: limit}
+		jsonReq, _ := json.Marshal(request)
 
 		orderDetails := []model.OrderDetailResponse{
 			{
@@ -156,11 +161,11 @@ func TestOrderHandler_GetOrderHistory(t *testing.T) {
 		}
 
 		mockOrderService.EXPECT().
-			GetOrderHistory(int(customerID)).
+			GetOrderHistory(int(customerID), limit, page).
 			Return(expectedResponse, nil)
 
 		token, _ := utils.GenerateToken(customerID, "test@example.com")
-		req, _ := http.NewRequest(http.MethodGet, "/order-history", nil)
+		req, _ := http.NewRequest(http.MethodPost, "/history", bytes.NewBuffer(jsonReq))
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -176,7 +181,9 @@ func TestOrderHandler_GetOrderHistory(t *testing.T) {
 	})
 
 	t.Run("unauthorized", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodGet, "/order-history", nil)
+		request := handler.HistoryRequest{Page: page, Limit: limit}
+		jsonReq, _ := json.Marshal(request)
+		req, _ := http.NewRequest(http.MethodPost, "/history", bytes.NewBuffer(jsonReq))
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
@@ -193,7 +200,7 @@ func TestOrderHandler_RemoveFromCart(t *testing.T) {
 	router := gin.Default()
 
 	orderHandler := handler.NewOrderHandler(mockOrderService)
-	router.DELETE("/remove-from-cart", orderHandler.RemoveFromCart)
+	router.POST("/remove", orderHandler.RemoveFromCart)
 
 	t.Run("success", func(t *testing.T) {
 		customerID := 1
@@ -207,7 +214,7 @@ func TestOrderHandler_RemoveFromCart(t *testing.T) {
 			"test@example.com",
 		)
 		jsonReq, _ := json.Marshal(request)
-		req, _ := http.NewRequest(http.MethodDelete, "/remove-from-cart", bytes.NewBuffer(jsonReq))
+		req, _ := http.NewRequest(http.MethodPost, "/remove", bytes.NewBuffer(jsonReq))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
@@ -223,7 +230,7 @@ func TestOrderHandler_RemoveFromCart(t *testing.T) {
 	})
 
 	t.Run("unauthorized", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodDelete, "/remove-from-cart", nil)
+		req, _ := http.NewRequest(http.MethodPost, "/remove", nil)
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
@@ -240,7 +247,7 @@ func TestOrderHandler_AddToCart(t *testing.T) {
 	router := gin.Default()
 
 	orderHandler := handler.NewOrderHandler(mockOrderService)
-	router.POST("/add-to-cart", orderHandler.AddToCart)
+	router.POST("/add", orderHandler.AddToCart)
 
 	t.Run("success", func(t *testing.T) {
 		customerID := 1
@@ -260,7 +267,7 @@ func TestOrderHandler_AddToCart(t *testing.T) {
 			"test@example.com",
 		)
 		jsonReq, _ := json.Marshal(request)
-		req, _ := http.NewRequest(http.MethodPost, "/add-to-cart", bytes.NewBuffer(jsonReq))
+		req, _ := http.NewRequest(http.MethodPost, "/add", bytes.NewBuffer(jsonReq))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
@@ -276,7 +283,7 @@ func TestOrderHandler_AddToCart(t *testing.T) {
 	})
 
 	t.Run("unauthorized", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodPost, "/add-to-cart", nil)
+		req, _ := http.NewRequest(http.MethodPost, "/add", nil)
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
@@ -288,7 +295,7 @@ func TestOrderHandler_AddToCart(t *testing.T) {
 		token, _ := utils.GenerateToken(1, "test@example.com")
 		req, _ := http.NewRequest(
 			http.MethodPost,
-			"/add-to-cart",
+			"/add",
 			bytes.NewBuffer([]byte("{bad json}")),
 		)
 		req.Header.Set("Content-Type", "application/json")

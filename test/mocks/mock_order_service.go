@@ -79,18 +79,18 @@ func (mr *MockOrderServiceMockRecorder) GetCart(orderId interface{}) *gomock.Cal
 }
 
 // GetOrderHistory mocks base method.
-func (m *MockOrderService) GetOrderHistory(customerID int) ([]model.OrderResponse, error) {
+func (m *MockOrderService) GetOrderHistory(customerID, limit, page int) ([]model.OrderResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrderHistory", customerID)
+	ret := m.ctrl.Call(m, "GetOrderHistory", customerID, limit, page)
 	ret0, _ := ret[0].([]model.OrderResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOrderHistory indicates an expected call of GetOrderHistory.
-func (mr *MockOrderServiceMockRecorder) GetOrderHistory(customerID interface{}) *gomock.Call {
+func (mr *MockOrderServiceMockRecorder) GetOrderHistory(customerID, limit, page interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderHistory", reflect.TypeOf((*MockOrderService)(nil).GetOrderHistory), customerID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderHistory", reflect.TypeOf((*MockOrderService)(nil).GetOrderHistory), customerID, limit, page)
 }
 
 // PayOrder mocks base method.

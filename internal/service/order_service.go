@@ -3,12 +3,13 @@ package service
 import (
 	"bookstore/internal/model"
 	"bookstore/internal/repository"
+	"log"
 )
 
 type OrderService interface {
 	AddToCart(orderID, bookID, quantity int, subtotal int64) error
 	GetCart(orderId int) (model.OrderResponse, error)
-	GetOrderHistory(customerID int) ([]model.OrderResponse, error)
+	GetOrderHistory(customerID, limit, page int) ([]model.OrderResponse, error)
 	CreateOrderIfNotExists(customerID int) (int, error)
 	RemoveFromCart(orderId int, bookId int) error
 	PayOrder(customerID int) error
@@ -37,8 +38,9 @@ func (s *orderService) GetCart(orderId int) (model.OrderResponse, error) {
 }
 
 // GetOrderHistory implements OrderService.
-func (s *orderService) GetOrderHistory(customerID int) ([]model.OrderResponse, error) {
-	return s.repository.GetOrderHistory(customerID)
+func (s *orderService) GetOrderHistory(customerID, limit, page int) ([]model.OrderResponse, error) {
+	log.Print(customerID, limit, page)
+	return s.repository.GetOrderHistory(customerID, limit, page)
 }
 
 // GetCart implements OrderService.

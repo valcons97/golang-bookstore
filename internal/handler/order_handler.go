@@ -72,12 +72,23 @@ func (h *OrderHandler) GetCart(c *gin.Context) {
 
 func (h *OrderHandler) GetOrderHistory(c *gin.Context) {
 	customerID, err := utils.ExtractCustomerID(c)
+	var request HistoryRequest
+
 	if err != nil {
 		ErrorHandler(c, http.StatusUnauthorized, "")
 		return
 	}
 
-	response, err := h.service.GetOrderHistory(customerID)
+	if err := c.ShouldBindJSON(&request); err != nil {
+		ErrorHandler(c, http.StatusBadRequest, "")
+		return
+	}
+
+	if request.Limit == 0 {
+		request.Limit = 10
+	}
+
+	response, err := h.service.GetOrderHistory(customerID, request.Limit, request.Page)
 
 	if err != nil {
 		ErrorHandler(

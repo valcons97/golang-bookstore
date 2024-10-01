@@ -3,7 +3,7 @@ package utils
 import (
 	"bookstore/internal/model"
 	"database/sql"
-	"fmt"
+	"log"
 )
 
 func ConvertStorePrice(value *float64) *int64 {
@@ -51,7 +51,8 @@ func ConvertToDetailResponse(rows *sql.Rows) ([]model.OrderResponse, error) {
 			&price,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("could not scan order row: %w", err)
+			log.Printf("[ConvertToDetailResponse] could not scan order row: %v", err)
+			return nil, err
 		}
 
 		// If the order is not in the map, create a new OrderResponse entry
@@ -87,7 +88,8 @@ func ConvertToDetailResponse(rows *sql.Rows) ([]model.OrderResponse, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("could not retrieve orders: %w", err)
+		log.Printf("[ConvertToDetailResponse] could not retrieve orders: %v", err)
+		return nil, err
 	}
 
 	return orders, nil

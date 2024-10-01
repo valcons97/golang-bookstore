@@ -14,3 +14,8 @@ type AddToCartRequest struct {
 type RemoveItemFromCartRequest struct {
 	BookId int64 `json:"bookId" binding:"required"`
 }
+
+type HistoryRequest struct {
+	Page  int `json:"page"  binding:"gte=0"`
+	Limit int `json:"limit" binding:"gte=0"`
+}
