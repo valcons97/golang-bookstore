@@ -11,9 +11,9 @@ import (
 )
 
 func BookRouter(router *gin.Engine, db *sql.DB) {
-	repo := repository.NewBookRepository(db) // Create the repository
-	svc := service.NewBookService(repo)      // Create the service
-	handler := handler.NewBookHandler(svc)   // Create the handler
+	repo := repository.NewBookRepository(db)
+	svc := service.NewBookService(repo)
+	handler := handler.NewBookHandler(svc)
 
 	// Define the routes
 	router.GET("/book", handler.GetBooks)

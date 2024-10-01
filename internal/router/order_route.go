@@ -11,9 +11,9 @@ import (
 )
 
 func OrderRouter(router *gin.Engine, db *sql.DB, authMiddleware gin.HandlerFunc) {
-	repo := repository.NewOrderRepository(db) // Create the repository
-	svc := service.NewOrderService(repo)      // Create the service
-	handler := handler.NewOrderHandler(svc)   // Create the handler
+	repo := repository.NewOrderRepository(db)
+	svc := service.NewOrderService(repo)
+	handler := handler.NewOrderHandler(svc)
 
 	orderRoutes := router.Group("/orders", authMiddleware)
 

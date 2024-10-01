@@ -11,9 +11,9 @@ import (
 )
 
 func CustomerRouter(router *gin.Engine, db *sql.DB) {
-	repo := repository.NewCustomerRepository(db) // Create the repository
-	svc := service.NewCustomerService(repo)      // Create the service
-	handler := handler.NewCustomerHandler(svc)   // Create the handler
+	repo := repository.NewCustomerRepository(db)
+	svc := service.NewCustomerService(repo)
+	handler := handler.NewCustomerHandler(svc)
 
 	// Define the routes
 	router.POST("/register", handler.Register)

@@ -317,13 +317,11 @@ func TestOrderRepository_RemoveFromCart(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectExec(deleteQuery).
 			WithArgs(orderID, bookID).
-			WillReturnResult(sqlmock.NewResult(0, 1)) // Simulating successful deletion
+			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		mock.ExpectExec(recalculationQuery).
 			WithArgs(orderID).
 			WillReturnResult(sqlmock.NewResult(0, 1))
-
-			// Simulating total recalculation
 
 		mock.ExpectCommit()
 
@@ -333,7 +331,6 @@ func TestOrderRepository_RemoveFromCart(t *testing.T) {
 	})
 
 	t.Run("error starting transaction", func(t *testing.T) {
-		// Simulating error while starting transaction
 		mock.ExpectBegin().WillReturnError(sql.ErrConnDone)
 
 		err := orderRepo.RemoveFromCart(orderID, bookID)
@@ -345,7 +342,7 @@ func TestOrderRepository_RemoveFromCart(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectExec(deleteQuery).
 			WithArgs(orderID, bookID).
-			WillReturnError(sql.ErrConnDone) // Simulating error during deletion
+			WillReturnError(sql.ErrConnDone)
 
 		mock.ExpectRollback()
 
@@ -375,15 +372,13 @@ func TestOrderRepository_RemoveFromCart(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectExec(deleteQuery).
 			WithArgs(orderID, bookID).
-			WillReturnResult(sqlmock.NewResult(0, 1)) // Simulating successful deletion
+			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		mock.ExpectExec(recalculationQuery).
 			WithArgs(orderID).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
-			// Simulating successful total recalculation
-
-		mock.ExpectCommit().WillReturnError(sql.ErrConnDone) // Simulating error during commit
+		mock.ExpectCommit().WillReturnError(sql.ErrConnDone)
 
 		err := orderRepo.RemoveFromCart(orderID, bookID)
 		assert.Error(t, err)

@@ -76,10 +76,8 @@ func TestCustomerHandler_Login(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
-		// Serve the request
 		router.ServeHTTP(w, req)
 
-		// Assert the response
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
 }
