@@ -6,45 +6,62 @@ This repository contains a simple bookstore application built in Go, utilizing t
 
 ## Folder Structure
 
-```plaintext
-golang-bookstore/
-├── cmd/                    # Entry point for the application
-│   └── main.go             # Main application file
-├── internal/               # Internal application code
-│   ├── book/               # Book-related functionality
-│   │   ├── handler/        # HTTP handlers for book routes
-│   │   │   └── handler.go   # Book handler implementation
-│   │   ├── model/          # Data models for book
-│   │   │   └── model.go     # Book model definition
-│   │   ├── repository/     # Data access layer for books
-│   │   │   ├── book_repository_impl.go # Implementation of the book repository
-│   │   │   └── book_repository.go      # Book repository interface
-│   │   └── service/        # Business logic for book operations
-│   │       ├── book_service_impl.go   # Implementation of the book service
-│   │       └── book_service.go         # Book service interface
-│   │   └── route.go        # Routes for book-related endpoints
-│   ├── customer/           # Customer-related functionality
-│   │   ├── auth/           # Authentication logic for customers
-│   │   │   └── auth.go     # Auth functions for customer login/registration
-│   │   ├── model/          # Data models for customers
-│   │   │   └── model.go     # Customer model definition
-│   │   ├── repository/     # Data access layer for customers
-│   │   │   ├── customer_repository_impl.go # Implementation of the customer repository
-│   │   │   └── customer_repository.go      # Customer repository interface
-│   │   └── service/        # Business logic for customer operations
-│   │       ├── customer_service_impl.go   # Implementation of the customer service
-│   │       └── customer_service.go         # Customer service interface
-│   ├── migration/          # Database migration scripts
-│   │   └── migration.go     # Database migration logic
-│   ├── order/              # Order-related functionality
-│   ├── pkg/                # Utility packages
-│   │   └── utils/          # General utility functions
-│   │       ├── converter.go # Converter utility functions
-│   │       └── password.go  # Password hashing utility functions
-│   └── script/             # Scripts for database seeding and other tasks
-│   │   └── seed.go         # Seed database with initial data
-│   ├── test/                # For unit testing
-```
+📁 golang-bookstore │
+├── 📁 cmd
+│ └── Main entry point for the application (Gin server setup, routes initialization).
+│
+├── 📁 internal
+│ ├── 📁 handler
+│ │ └── Contains HTTP handlers that process requests and generate responses.
+│ │
+│ ├── 📁 middleware
+│ │ └── Custom middleware functions (e.g., JWT authentication).
+│ │
+│ ├── 📁 migration
+│ │ └── Database migrations to set up schema.
+│ │
+│ ├── 📁 model
+│ │ └── Structs representing database entities (Book, Order, Customer, etc.).
+│ │
+│ ├── 📁 repository
+│ │ └── Database access logic for handling CRUD operations.
+│ │
+│ ├── 📁 router
+│ │ └── Route definition and grouping.
+│ │
+│ ├── 📁 service
+│ └── Business logic and service layer for handling core functionalities.
+│
+├── 📁 pkg
+│ └── 📁 utils
+│ └── Utility functions (e.g., password hashing, token generation, price conversions).
+│
+├── 📁 script
+│ └── Helpful scripts (e.g., DB seeding, testing utilities).
+│
+├── 📁 test
+│ └── Unit and integration tests.
+│
+├── .env
+│ └── Environment variables for configuration.
+│
+├── .gitignore
+│ └── Specifies files to be ignored by Git.
+│
+├── docker-compose.yml
+│ └── Configuration for setting up Dockerized services.
+│
+├── Dockerfile
+│ └── Docker setup for the application.
+│
+├── go.mod
+│ └── Dependency and module management file.
+│
+├── go.sum
+│ └── Version checksum of the dependencies.
+│
+└── README.md
+└── Project overview and setup instructions.
 
 ## DB Diagram
 
