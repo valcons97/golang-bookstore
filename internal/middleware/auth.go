@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -9,12 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var jwtSecret = []byte(os.Getenv("SECRET_KEY"))
-
-// AuthMiddleware is the middleware for authenticating JWT tokens.
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get the token from the Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
@@ -22,23 +19,29 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Split the header to get the token
-		tokenString := strings.Split(authHeader, "Bearer ")[1]
+		log.Println("Secret Key Auth:", os.Getenv("SECRET_KEY"))
+
+		tokenString := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
 		if tokenString == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token is required"})
 			c.Abort()
 			return
 		}
 
-		// Validate the token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, http.ErrNotSupported
 			}
-			return jwtSecret, nil
+			return []byte(os.Getenv("SECRET_KEY")), nil
 		})
 
-		if err != nil || !token.Valid {
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token: " + err.Error()})
+			c.Abort()
+			return
+		}
+
+		if !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return

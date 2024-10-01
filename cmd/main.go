@@ -3,9 +3,12 @@ package main
 import (
 	"bookstore/internal/middleware"
 	"bookstore/internal/router"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -13,8 +16,26 @@ import (
 func main() {
 	headerLog := "BookStore"
 
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	host := os.Getenv("DB_HOST")
+	user := os.Getenv("POSTGRES_USER")
+	password := os.Getenv("POSTGRES_PASSWORD")
+	dbname := os.Getenv("POSTGRES_DB")
+	port := os.Getenv("DB_PORT")
+
 	// connection to db
-	conn := "host=db user=user password=password dbname=bookstore port=5432 sslmode=disable"
+	conn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		host,
+		user,
+		password,
+		dbname,
+		port,
+	)
 
 	db, err := gorm.Open(postgres.Open(conn), &gorm.Config{})
 

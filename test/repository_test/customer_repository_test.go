@@ -17,16 +17,17 @@ func TestCustomerRepository_Register(t *testing.T) {
 	defer db.Close()
 
 	customerRepo := repository.NewCustomerRepository(db)
+	query := "SELECT id FROM customers WHERE email = ?"
 
+	customer := &model.Customer{
+		Email:    "test@example.com",
+		Password: "hashedpassword",
+		Name:     "John Doe",
+		Address:  "123 Street",
+	}
 	t.Run("successful registration", func(t *testing.T) {
-		customer := &model.Customer{
-			Email:    "test@example.com",
-			Password: "hashedpassword",
-			Name:     "John Doe",
-			Address:  "123 Street",
-		}
 
-		mock.ExpectQuery("SELECT id FROM customers WHERE email = ?").
+		mock.ExpectQuery(query).
 			WithArgs(customer.Email).
 			WillReturnRows(sqlmock.NewRows([]string{"id"}))
 
@@ -41,14 +42,8 @@ func TestCustomerRepository_Register(t *testing.T) {
 	})
 
 	t.Run("email already registered", func(t *testing.T) {
-		customer := &model.Customer{
-			Email:    "test@example.com",
-			Password: "hashedpassword",
-			Name:     "John Doe",
-			Address:  "123 Street",
-		}
 
-		mock.ExpectQuery("SELECT id FROM customers WHERE email = ?").
+		mock.ExpectQuery(query).
 			WithArgs(customer.Email).
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
@@ -66,6 +61,7 @@ func TestCustomerRepository_Login(t *testing.T) {
 	defer db.Close()
 
 	customerRepo := repository.NewCustomerRepository(db)
+	query := "SELECT id, email, password, name, address FROM customers WHERE email = ?"
 
 	t.Run("successful login", func(t *testing.T) {
 		email := "test@example.com"
@@ -80,7 +76,7 @@ func TestCustomerRepository_Login(t *testing.T) {
 			Address:  "123 Street",
 		}
 
-		mock.ExpectQuery("SELECT id, email, password, name, address FROM customers WHERE email = ?").
+		mock.ExpectQuery(query).
 			WithArgs(email).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "email", "password", "name", "address"}).
 				AddRow(customer.ID, customer.Email, customer.Password, customer.Name, customer.Address),
@@ -98,7 +94,7 @@ func TestCustomerRepository_Login(t *testing.T) {
 		email := "wrong@example.com"
 		password := "password"
 
-		mock.ExpectQuery("SELECT id, email, password, name, address FROM customers WHERE email = ?").
+		mock.ExpectQuery(query).
 			WithArgs(email).
 			WillReturnError(sql.ErrNoRows)
 
@@ -122,7 +118,7 @@ func TestCustomerRepository_Login(t *testing.T) {
 			Address:  "123 Street",
 		}
 
-		mock.ExpectQuery("SELECT id, email, password, name, address FROM customers WHERE email = ?").
+		mock.ExpectQuery(query).
 			WithArgs(email).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "email", "password", "name", "address"}).
 				AddRow(customer.ID, customer.Email, customer.Password, customer.Name, customer.Address),
