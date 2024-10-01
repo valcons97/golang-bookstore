@@ -1,4 +1,4 @@
-package handlertest
+package handler_test
 
 import (
 	"bookstore/internal/handler"
