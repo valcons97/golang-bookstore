@@ -25,9 +25,9 @@ func NewCustomerRepository(db *sql.DB) CustomerRepository {
 func (c *customerRepository) Login(email string, password string) (*model.Customer, error) {
 	var customer model.Customer
 
-	query := `SELECT id, email, password, name, address FROM customers WHERE email = $1`
+	query := `SELECT id, email, password FROM customers WHERE email = $1`
 	err := c.db.QueryRow(query, email).
-		Scan(&customer.ID, &customer.Email, &customer.Password, &customer.Name, &customer.Address)
+		Scan(&customer.ID, &customer.Email, &customer.Password)
 
 	if err != nil {
 		if err == sql.ErrNoRows {

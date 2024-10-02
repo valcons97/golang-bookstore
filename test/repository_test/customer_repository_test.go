@@ -61,7 +61,7 @@ func TestCustomerRepository_Login(t *testing.T) {
 	defer db.Close()
 
 	customerRepo := repository.NewCustomerRepository(db)
-	query := "SELECT id, email, password, name, address FROM customers WHERE email = ?"
+	query := "SELECT id, email, password FROM customers WHERE email = ?"
 
 	t.Run("successful login", func(t *testing.T) {
 		email := "test@example.com"
@@ -72,14 +72,12 @@ func TestCustomerRepository_Login(t *testing.T) {
 			ID:       1,
 			Email:    email,
 			Password: hashedPassword,
-			Name:     "John Doe",
-			Address:  "123 Street",
 		}
 
 		mock.ExpectQuery(query).
 			WithArgs(email).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "email", "password", "name", "address"}).
-				AddRow(customer.ID, customer.Email, customer.Password, customer.Name, customer.Address),
+			WillReturnRows(sqlmock.NewRows([]string{"id", "email", "password"}).
+				AddRow(customer.ID, customer.Email, customer.Password),
 			)
 
 		result, err := customerRepo.Login(email, password)

@@ -32,30 +32,15 @@ func (h *CustomerHandler) Login(c *gin.Context) {
 		return
 	}
 
-	customer, err := h.Service.Login(request.Email, request.Password)
+	token, err := h.Service.Login(request.Email, request.Password)
 	if err != nil {
-		ErrorHandler(c, http.StatusUnauthorized, "Invalid email or password")
-		return
-	}
-
-	token, err := utils.GenerateToken(
-		customer.ID,
-		customer.Email,
-	)
-	if err != nil {
-		ErrorHandler(c, http.StatusInternalServerError, "Failed to generate token")
+		ErrorHandler(c, http.StatusUnauthorized, "Failed to login")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login successful",
 		"token":   token,
-		"customer": gin.H{
-			"id":      customer.ID,
-			"email":   customer.Email,
-			"name":    customer.Name,
-			"address": customer.Address,
-		},
 	})
 }
 

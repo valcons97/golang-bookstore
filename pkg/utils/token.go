@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"log"
 	"os"
 	"time"
 
@@ -22,8 +21,6 @@ func GenerateToken(userID int64, email string) (string, error) {
 			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(), // Token expiration time
 		},
 	}
-
-	log.Println("Secret Key:", os.Getenv("SECRET_KEY"))
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(os.Getenv("SECRET_KEY")))
