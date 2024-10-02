@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bookstore/internal/handler/request"
 	"bookstore/internal/model"
 	"bookstore/internal/service"
 	"bookstore/pkg/utils"
@@ -19,7 +20,7 @@ func NewCustomerHandler(service service.CustomerService) *CustomerHandler {
 }
 
 func (h *CustomerHandler) Login(c *gin.Context) {
-	var request LoginRequest
+	var request request.LoginRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		ErrorHandler(c, http.StatusBadRequest, "")

@@ -2,6 +2,8 @@ package handler_test
 
 import (
 	"bookstore/internal/handler"
+	"bookstore/internal/handler/request"
+	"bookstore/internal/middleware"
 	"bookstore/internal/model"
 	"bookstore/pkg/utils"
 	"bookstore/test/mocks"
@@ -23,6 +25,7 @@ func TestOrderHandler_PayOrder(t *testing.T) {
 	mockOrderService := mocks.NewMockOrderService(ctrl)
 	router := gin.Default()
 
+	router.Use(middleware.AuthMiddleware())
 	orderHandler := handler.NewOrderHandler(mockOrderService)
 	router.POST("/pay", orderHandler.PayOrder)
 
@@ -62,13 +65,13 @@ func TestOrderHandler_GetCart(t *testing.T) {
 	mockOrderService := mocks.NewMockOrderService(ctrl)
 	router := gin.Default()
 
+	router.Use(middleware.AuthMiddleware())
 	orderHandler := handler.NewOrderHandler(mockOrderService)
 	router.GET("/cart", orderHandler.GetCart)
 
 	t.Run("success", func(t *testing.T) {
 		customerID := int64(1)
 		orderID := int64(1)
-		mockOrderService.EXPECT().CreateOrderIfNotExists(int(customerID)).Return(int(orderID), nil)
 
 		books := []model.Book{
 			{ID: 1, Title: "Book 1", Author: "Author 1", Price: 10.0},
@@ -91,10 +94,12 @@ func TestOrderHandler_GetCart(t *testing.T) {
 		}
 
 		mockOrderService.EXPECT().
-			GetCart(int(orderID)).
-			Return(expectedResponse, nil)
+			GetCart(int(customerID)).
+			Return(&expectedResponse, nil)
 
-		token, _ := utils.GenerateToken(customerID, "test@example.com")
+		token, err := utils.GenerateToken(customerID, "test@example.com")
+		assert.NoError(t, err)
+
 		req, _ := http.NewRequest(http.MethodGet, "/cart", nil)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
@@ -104,7 +109,7 @@ func TestOrderHandler_GetCart(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var actualResponse model.OrderResponse
-		err := json.Unmarshal(w.Body.Bytes(), &actualResponse)
+		err = json.Unmarshal(w.Body.Bytes(), &actualResponse)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expectedResponse, actualResponse)
@@ -127,6 +132,7 @@ func TestOrderHandler_GetOrderHistory(t *testing.T) {
 	mockOrderService := mocks.NewMockOrderService(ctrl)
 	router := gin.Default()
 
+	router.Use(middleware.AuthMiddleware())
 	orderHandler := handler.NewOrderHandler(mockOrderService)
 	router.POST("/history", orderHandler.GetOrderHistory)
 
@@ -140,7 +146,7 @@ func TestOrderHandler_GetOrderHistory(t *testing.T) {
 			{ID: 2, Title: "Book 2", Author: "Author 2", Price: 15.0},
 		}
 
-		request := handler.HistoryRequest{Page: page, Limit: limit}
+		request := request.HistoryRequest{Page: page, Limit: limit}
 		jsonReq, _ := json.Marshal(request)
 
 		orderDetails := []model.OrderDetailResponse{
@@ -161,7 +167,7 @@ func TestOrderHandler_GetOrderHistory(t *testing.T) {
 		}
 
 		mockOrderService.EXPECT().
-			GetOrderHistory(int(customerID), limit, page).
+			GetOrderHistory(int(customerID), request).
 			Return(expectedResponse, nil)
 
 		token, _ := utils.GenerateToken(customerID, "test@example.com")
@@ -181,7 +187,7 @@ func TestOrderHandler_GetOrderHistory(t *testing.T) {
 	})
 
 	t.Run("unauthorized", func(t *testing.T) {
-		request := handler.HistoryRequest{Page: page, Limit: limit}
+		request := request.HistoryRequest{Page: page, Limit: limit}
 		jsonReq, _ := json.Marshal(request)
 		req, _ := http.NewRequest(http.MethodPost, "/history", bytes.NewBuffer(jsonReq))
 		w := httptest.NewRecorder()
@@ -199,20 +205,19 @@ func TestOrderHandler_RemoveFromCart(t *testing.T) {
 	mockOrderService := mocks.NewMockOrderService(ctrl)
 	router := gin.Default()
 
+	router.Use(middleware.AuthMiddleware())
 	orderHandler := handler.NewOrderHandler(mockOrderService)
 	router.POST("/remove", orderHandler.RemoveFromCart)
 
 	t.Run("success", func(t *testing.T) {
-		customerID := 1
-		orderID := 1
-		request := handler.RemoveItemFromCartRequest{BookId: 1}
-		mockOrderService.EXPECT().CreateOrderIfNotExists(int(customerID)).Return(orderID, nil)
-		mockOrderService.EXPECT().RemoveFromCart(orderID, int(request.BookId)).Return(nil)
+		customerID := int64(1)
+		request := request.RemoveItemFromCartRequest{BookId: 1}
 
-		token, _ := utils.GenerateToken(
-			int64(customerID),
-			"test@example.com",
-		)
+		mockOrderService.EXPECT().RemoveFromCart(int(customerID), int(request.BookId)).Return(nil)
+
+		token, err := utils.GenerateToken(customerID, "test@example.com")
+		assert.NoError(t, err)
+
 		jsonReq, _ := json.Marshal(request)
 		req, _ := http.NewRequest(http.MethodPost, "/remove", bytes.NewBuffer(jsonReq))
 		req.Header.Set("Content-Type", "application/json")
@@ -224,7 +229,7 @@ func TestOrderHandler_RemoveFromCart(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var actualResponse gin.H
-		err := json.Unmarshal(w.Body.Bytes(), &actualResponse)
+		err = json.Unmarshal(w.Body.Bytes(), &actualResponse)
 		assert.NoError(t, err)
 		assert.Equal(t, "Book removed from cart", actualResponse["message"])
 	})
@@ -246,20 +251,18 @@ func TestOrderHandler_AddToCart(t *testing.T) {
 	mockOrderService := mocks.NewMockOrderService(ctrl)
 	router := gin.Default()
 
+	router.Use(middleware.AuthMiddleware())
 	orderHandler := handler.NewOrderHandler(mockOrderService)
 	router.POST("/add", orderHandler.AddToCart)
 
 	t.Run("success", func(t *testing.T) {
 		customerID := 1
 		orderID := 1
-		request := handler.AddToCartRequest{BookId: 1, Quantity: 2, Price: 10}
-		subtotal := float64(request.Quantity) * request.Price
+		request := request.AddToCartRequest{BookId: 1, Quantity: 2, Price: 10}
 
 		// since its converted to cent
-		subtotalInt64 := int64(subtotal) * 100
-		mockOrderService.EXPECT().CreateOrderIfNotExists(customerID).Return(orderID, nil)
 		mockOrderService.EXPECT().
-			AddToCart(orderID, int(request.BookId), int(request.Quantity), subtotalInt64).
+			AddToCart(orderID, request).
 			Return(nil)
 
 		token, _ := utils.GenerateToken(

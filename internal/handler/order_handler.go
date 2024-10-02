@@ -1,8 +1,8 @@
 package handler
 
 import (
+	"bookstore/internal/handler/request"
 	"bookstore/internal/service"
-	"bookstore/pkg/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,13 +17,13 @@ func NewOrderHandler(service service.OrderService) *OrderHandler {
 }
 
 func (h *OrderHandler) PayOrder(c *gin.Context) {
-	customerID, err := utils.ExtractCustomerID(c)
-	if err != nil {
+	id, exists := c.Get("customerID")
+	if !exists {
 		ErrorHandler(c, http.StatusUnauthorized, "")
 		return
 	}
 
-	err = h.service.PayOrder(customerID)
+	err := h.service.PayOrder(id.(int))
 
 	if err != nil {
 		ErrorHandler(
@@ -38,25 +38,13 @@ func (h *OrderHandler) PayOrder(c *gin.Context) {
 }
 
 func (h *OrderHandler) GetCart(c *gin.Context) {
-	// Get the customer ID from the JWT token
-	customerID, err := utils.ExtractCustomerID(c)
-	if err != nil {
+	id, exists := c.Get("customerID")
+	if !exists {
 		ErrorHandler(c, http.StatusUnauthorized, "")
 		return
 	}
 
-	orderId, err := h.service.CreateOrderIfNotExists(customerID)
-
-	if err != nil {
-		ErrorHandler(
-			c,
-			http.StatusInternalServerError,
-			"Unable to access cart. Please try again later.",
-		)
-		return
-	}
-
-	response, err := h.service.GetCart(orderId)
+	response, err := h.service.GetCart(id.(int))
 
 	if err != nil {
 		ErrorHandler(
@@ -71,10 +59,10 @@ func (h *OrderHandler) GetCart(c *gin.Context) {
 }
 
 func (h *OrderHandler) GetOrderHistory(c *gin.Context) {
-	customerID, err := utils.ExtractCustomerID(c)
-	var request HistoryRequest
+	var request request.HistoryRequest
 
-	if err != nil {
+	id, exists := c.Get("customerID")
+	if !exists {
 		ErrorHandler(c, http.StatusUnauthorized, "")
 		return
 	}
@@ -84,11 +72,7 @@ func (h *OrderHandler) GetOrderHistory(c *gin.Context) {
 		return
 	}
 
-	if request.Limit == 0 {
-		request.Limit = 10
-	}
-
-	response, err := h.service.GetOrderHistory(customerID, request.Limit, request.Page)
+	response, err := h.service.GetOrderHistory(id.(int), request)
 
 	if err != nil {
 		ErrorHandler(
@@ -104,9 +88,9 @@ func (h *OrderHandler) GetOrderHistory(c *gin.Context) {
 
 func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
 	// Get the customer ID from the JWT token
-	var request RemoveItemFromCartRequest
-	customerID, err := utils.ExtractCustomerID(c)
-	if err != nil {
+	var request request.RemoveItemFromCartRequest
+	id, exists := c.Get("customerID")
+	if !exists {
 		ErrorHandler(c, http.StatusUnauthorized, "")
 		return
 	}
@@ -116,18 +100,7 @@ func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
 		return
 	}
 
-	orderId, err := h.service.CreateOrderIfNotExists(customerID)
-
-	if err != nil {
-		ErrorHandler(
-			c,
-			http.StatusInternalServerError,
-			"Unable to access cart. Please try again later.",
-		)
-		return
-	}
-
-	err = h.service.RemoveFromCart(orderId, int(request.BookId))
+	err := h.service.RemoveFromCart(id.(int), int(request.BookId))
 
 	if err != nil {
 		ErrorHandler(
@@ -144,10 +117,10 @@ func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
 }
 
 func (h *OrderHandler) AddToCart(c *gin.Context) {
-	var request AddToCartRequest
+	var request request.AddToCartRequest
 
-	customerID, err := utils.ExtractCustomerID(c)
-	if err != nil {
+	id, exists := c.Get("customerID")
+	if !exists {
 		ErrorHandler(c, http.StatusUnauthorized, "")
 		return
 	}
@@ -157,25 +130,7 @@ func (h *OrderHandler) AddToCart(c *gin.Context) {
 		return
 	}
 
-	orderId, err := h.service.CreateOrderIfNotExists(customerID)
-
-	if err != nil {
-		ErrorHandler(
-			c,
-			http.StatusInternalServerError,
-			"Unable to access cart. Please try again later.",
-		)
-		return
-	}
-
-	subTotal := request.Price * float64(request.Quantity)
-
-	if err := h.service.AddToCart(
-		orderId,
-		int(request.BookId),
-		int(request.Quantity),
-		*utils.ConvertStorePrice(&subTotal)); err != nil {
-
+	if err := h.service.AddToCart(id.(int), request); err != nil {
 		ErrorHandler(
 			c,
 			http.StatusInternalServerError,

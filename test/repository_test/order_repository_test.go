@@ -45,7 +45,7 @@ func TestOrderRepository_GetCart(t *testing.T) {
 
 		result, err := orderRepo.GetCart(orderID)
 
-		expected := model.OrderResponse{
+		expected := &model.OrderResponse{
 			ID: int64(orderID),
 			OrderDetail: []model.OrderDetailResponse{
 				{
@@ -72,14 +72,8 @@ func TestOrderRepository_GetCart(t *testing.T) {
 
 		result, err := orderRepo.GetCart(orderID)
 
-		expected := model.OrderResponse{
-			ID:          int64(orderID),
-			OrderDetail: []model.OrderDetailResponse{},
-			Total:       0,
-		}
-
 		assert.NoError(t, err)
-		assert.Equal(t, expected, result)
+		assert.Nil(t, result)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -91,7 +85,7 @@ func TestOrderRepository_GetCart(t *testing.T) {
 		result, err := orderRepo.GetCart(orderID)
 
 		assert.Error(t, err)
-		assert.Equal(t, model.OrderResponse{}, result)
+		assert.Nil(t, result)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }

@@ -4,7 +4,6 @@ import (
 	"bookstore/internal/model"
 	"bookstore/internal/repository"
 	"bookstore/pkg/utils"
-	"log"
 )
 
 type CustomerService interface {
@@ -25,7 +24,6 @@ func (s *customerService) Login(email string, password string) (string, error) {
 	customer, err := s.repository.Login(email, password)
 
 	if err != nil {
-		log.Printf("[Login] error in login service for email: %s, e: %v", email, err)
 		return "", err
 	}
 
@@ -35,7 +33,6 @@ func (s *customerService) Login(email string, password string) (string, error) {
 	)
 
 	if err != nil {
-		log.Printf("[Login] error generating token for email: %s, e: %v", email, err)
 		return "", err
 	}
 

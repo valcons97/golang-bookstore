@@ -11,7 +11,7 @@ import (
 type OrderRepository interface {
 	AddOrUpdateCart(orderID, bookID, quantity int, subtotal int64) error
 	RemoveFromCart(orderId int, bookId int) error
-	GetCart(orderId int) (model.OrderResponse, error)
+	GetCart(orderId int) (*model.OrderResponse, error)
 	GetOrderHistory(customerID, limit, page int) ([]model.OrderResponse, error)
 	CreateOrderIfNotExists(customerID int) (int, error)
 	PayOrder(customerID int) error
@@ -25,7 +25,7 @@ func NewOrderRepository(db *sql.DB) OrderRepository {
 	return &orderRepository{db: db}
 }
 
-func (r *orderRepository) GetCart(orderId int) (model.OrderResponse, error) {
+func (r *orderRepository) GetCart(orderId int) (*model.OrderResponse, error) {
 	query := `SELECT o.id, o.total,
 			  d.id AS detail_id, d.book_id, d.quantity, d.subtotal,
 			  b.title, b.author, b.price
@@ -37,7 +37,7 @@ func (r *orderRepository) GetCart(orderId int) (model.OrderResponse, error) {
 	rows, err := r.db.Query(query, orderId)
 	if err != nil {
 		log.Printf("[GetCart] Error retrieving cart: %v", err)
-		return model.OrderResponse{}, err
+		return nil, err
 	}
 
 	defer rows.Close()
@@ -45,20 +45,16 @@ func (r *orderRepository) GetCart(orderId int) (model.OrderResponse, error) {
 	cart, err := utils.ConvertToDetailResponse(rows)
 	if err != nil {
 		log.Printf("[GetCart] Error converting rows to detail response: %v", err)
-		return model.OrderResponse{}, err
+		return nil, err
 	}
 
 	// Check if the cart slice is empty
 	if len(cart) == 0 {
-		return model.OrderResponse{
-			ID:          int64(orderId),
-			OrderDetail: []model.OrderDetailResponse{},
-			Total:       0,
-		}, nil
+		return nil, nil
 	}
 
 	// Return the first OrderResponse
-	return cart[0], nil
+	return &cart[0], nil
 }
 
 func (r *orderRepository) AddOrUpdateCart(orderID, bookID, quantity int, subtotal int64) error {

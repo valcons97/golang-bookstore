@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	request "bookstore/internal/handler/request"
 	model "bookstore/internal/model"
 	reflect "reflect"
 
@@ -35,17 +36,17 @@ func (m *MockOrderService) EXPECT() *MockOrderServiceMockRecorder {
 }
 
 // AddToCart mocks base method.
-func (m *MockOrderService) AddToCart(orderID, bookID, quantity int, subtotal int64) error {
+func (m *MockOrderService) AddToCart(customerID int, request request.AddToCartRequest) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddToCart", orderID, bookID, quantity, subtotal)
+	ret := m.ctrl.Call(m, "AddToCart", customerID, request)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddToCart indicates an expected call of AddToCart.
-func (mr *MockOrderServiceMockRecorder) AddToCart(orderID, bookID, quantity, subtotal interface{}) *gomock.Call {
+func (mr *MockOrderServiceMockRecorder) AddToCart(customerID, request interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToCart", reflect.TypeOf((*MockOrderService)(nil).AddToCart), orderID, bookID, quantity, subtotal)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToCart", reflect.TypeOf((*MockOrderService)(nil).AddToCart), customerID, request)
 }
 
 // CreateOrderIfNotExists mocks base method.
@@ -64,33 +65,33 @@ func (mr *MockOrderServiceMockRecorder) CreateOrderIfNotExists(customerID interf
 }
 
 // GetCart mocks base method.
-func (m *MockOrderService) GetCart(orderId int) (model.OrderResponse, error) {
+func (m *MockOrderService) GetCart(customerID int) (*model.OrderResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCart", orderId)
-	ret0, _ := ret[0].(model.OrderResponse)
+	ret := m.ctrl.Call(m, "GetCart", customerID)
+	ret0, _ := ret[0].(*model.OrderResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCart indicates an expected call of GetCart.
-func (mr *MockOrderServiceMockRecorder) GetCart(orderId interface{}) *gomock.Call {
+func (mr *MockOrderServiceMockRecorder) GetCart(customerID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCart", reflect.TypeOf((*MockOrderService)(nil).GetCart), orderId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCart", reflect.TypeOf((*MockOrderService)(nil).GetCart), customerID)
 }
 
 // GetOrderHistory mocks base method.
-func (m *MockOrderService) GetOrderHistory(customerID, limit, page int) ([]model.OrderResponse, error) {
+func (m *MockOrderService) GetOrderHistory(customerID int, request request.HistoryRequest) ([]model.OrderResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrderHistory", customerID, limit, page)
+	ret := m.ctrl.Call(m, "GetOrderHistory", customerID, request)
 	ret0, _ := ret[0].([]model.OrderResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOrderHistory indicates an expected call of GetOrderHistory.
-func (mr *MockOrderServiceMockRecorder) GetOrderHistory(customerID, limit, page interface{}) *gomock.Call {
+func (mr *MockOrderServiceMockRecorder) GetOrderHistory(customerID, request interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderHistory", reflect.TypeOf((*MockOrderService)(nil).GetOrderHistory), customerID, limit, page)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderHistory", reflect.TypeOf((*MockOrderService)(nil).GetOrderHistory), customerID, request)
 }
 
 // PayOrder mocks base method.
@@ -108,15 +109,15 @@ func (mr *MockOrderServiceMockRecorder) PayOrder(customerID interface{}) *gomock
 }
 
 // RemoveFromCart mocks base method.
-func (m *MockOrderService) RemoveFromCart(orderId, bookId int) error {
+func (m *MockOrderService) RemoveFromCart(customerID, bookId int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveFromCart", orderId, bookId)
+	ret := m.ctrl.Call(m, "RemoveFromCart", customerID, bookId)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveFromCart indicates an expected call of RemoveFromCart.
-func (mr *MockOrderServiceMockRecorder) RemoveFromCart(orderId, bookId interface{}) *gomock.Call {
+func (mr *MockOrderServiceMockRecorder) RemoveFromCart(customerID, bookId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFromCart", reflect.TypeOf((*MockOrderService)(nil).RemoveFromCart), orderId, bookId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFromCart", reflect.TypeOf((*MockOrderService)(nil).RemoveFromCart), customerID, bookId)
 }

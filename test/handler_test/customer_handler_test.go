@@ -2,6 +2,7 @@ package handler_test
 
 import (
 	"bookstore/internal/handler"
+	"bookstore/internal/handler/request"
 	"bookstore/internal/model"
 	"bookstore/test/mocks"
 	"bytes"
@@ -33,7 +34,7 @@ func TestCustomerHandler_Login(t *testing.T) {
 			Login("test@example.com", "password").
 			Return(token, nil)
 
-		loginRequest := handler.LoginRequest{Email: "test@example.com", Password: "password"}
+		loginRequest := request.LoginRequest{Email: "test@example.com", Password: "password"}
 		jsonReq, _ := json.Marshal(loginRequest)
 		req, _ := http.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(jsonReq))
 		req.Header.Set("Content-Type", "application/json")
@@ -58,7 +59,7 @@ func TestCustomerHandler_Login(t *testing.T) {
 			Return("", errors.New("invalid credentials"))
 
 		// Prepare request with incorrect credentials
-		loginRequest := handler.LoginRequest{Email: "wrong@example.com", Password: "wrongpassword"}
+		loginRequest := request.LoginRequest{Email: "wrong@example.com", Password: "wrongpassword"}
 		jsonReq, _ := json.Marshal(loginRequest)
 		req, _ := http.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(jsonReq))
 		req.Header.Set("Content-Type", "application/json")

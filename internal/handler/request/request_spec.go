@@ -1,4 +1,4 @@
-package handler
+package request
 
 type LoginRequest struct {
 	Email    string `json:"email"    binding:"required,email"` // Email field with validation

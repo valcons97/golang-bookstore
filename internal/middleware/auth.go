@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -18,8 +17,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
-		log.Println("Secret Key Auth:", os.Getenv("SECRET_KEY"))
 
 		tokenString := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
 		if tokenString == "" {
@@ -46,6 +43,25 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok || !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.Abort()
+			return
+		}
+
+		// need to convert to float 64 since id inside claims is being safe in float64
+		customerIDFloat, ok := claims["id"].(float64)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid customer ID in token"})
+			c.Abort()
+			return
+		}
+
+		customerID := int(customerIDFloat)
+
+		c.Set("customerID", customerID)
 
 		c.Next()
 	}
