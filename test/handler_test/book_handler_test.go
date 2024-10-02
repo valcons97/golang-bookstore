@@ -124,8 +124,8 @@ func TestBookHandler_CreateBook(t *testing.T) {
 	router.POST("/books", h.CreateBook)
 
 	t.Run("success", func(t *testing.T) {
-		newBook := model.Book{Title: "New Book", Author: "New Author", Price: 1.23}
-		mockBookService.EXPECT().CreateBook(&newBook).Return(int64(1), nil)
+		newBook := model.Book{ID: int64(1), Title: "New Book", Author: "New Author", Price: 1.23}
+		mockBookService.EXPECT().CreateBook(&newBook).Return(&newBook, nil)
 
 		jsonBook, _ := json.Marshal(newBook)
 		req, _ := http.NewRequest(http.MethodPost, "/books", bytes.NewBuffer(jsonBook))
@@ -151,7 +151,7 @@ func TestBookHandler_CreateBook(t *testing.T) {
 		newBook := model.Book{Title: "New Book", Author: "New Author"}
 		mockBookService.EXPECT().
 			CreateBook(&newBook).
-			Return(int64(0), errors.New("failed to create book"))
+			Return(nil, errors.New("failed to create book"))
 
 		jsonBook, _ := json.Marshal(newBook)
 		req, _ := http.NewRequest(http.MethodPost, "/books", bytes.NewBuffer(jsonBook))

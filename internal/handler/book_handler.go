@@ -49,15 +49,13 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 		ErrorHandler(c, http.StatusBadRequest, "")
 		return
 	}
-	id, err := h.Service.CreateBook(&book)
+	createdBook, err := h.Service.CreateBook(&book)
 	if err != nil {
 		ErrorHandler(c, http.StatusInternalServerError, "Failed to create book")
 		return
 	}
 
-	book.ID = id
-
-	c.JSON(http.StatusCreated, book)
+	c.JSON(http.StatusCreated, createdBook)
 }
 
 func (h *BookHandler) UpdateBook(c *gin.Context) {

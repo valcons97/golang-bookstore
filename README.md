@@ -39,7 +39,6 @@ golang-bookstore
 
 <img width="640" alt="image" src="https://github.com/user-attachments/assets/4002361a-587a-4331-bb4a-197805d1e98f">
 
-
 ## Project Setup
 
 ### Generating Mocks
@@ -47,10 +46,18 @@ golang-bookstore
 You can generate mocks for your services using the following commands:
 
 ```bash
-mockgen -source=./pkg/book/service.go -destination=./pkg/book/mock_service.go -package=book
+
+// book related mock
 mockgen -source=internal/service/book_service.go -destination=test/mocks/mock_book_service.go -package=mocks
+mockgen -source=internal/repository/book_repository.go -destination=test/mocks/mock_book_repository.go -package=mocks
+
+// customer related mock
 mockgen -source=internal/service/customer_service.go -destination=test/mocks/mock_customer_service.go -package=mocks
+mockgen -source=internal/repository/customer_repository.go -destination=test/mocks/mock_customer_repository.go -package=mocks
+
+// order related mock
 mockgen -source=internal/service/order_service.go -destination=test/mocks/mock_order_service.go -package=mocks
+mockgen -source=internal/repository/order_repository.go -destination=test/mocks/mock_order_repository.go -package=mocks
 ```
 
 To run all tests in the project, use the following command:

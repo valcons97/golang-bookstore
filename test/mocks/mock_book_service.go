@@ -35,10 +35,10 @@ func (m *MockBookService) EXPECT() *MockBookServiceMockRecorder {
 }
 
 // CreateBook mocks base method.
-func (m *MockBookService) CreateBook(book *model.Book) (int64, error) {
+func (m *MockBookService) CreateBook(book *model.Book) (*model.Book, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateBook", book)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(*model.Book)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
