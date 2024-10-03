@@ -25,9 +25,9 @@ func TestCreateBook(t *testing.T) {
 			WithArgs(book.Title, book.Author, utils.ConvertStorePrice(&book.Price)).
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
-		id, err := bookRepo.CreateBook(book)
+		err := bookRepo.CreateBook(book)
 		assert.NoError(t, err)
-		assert.Equal(t, int64(1), id)
+
 	})
 
 	t.Run("error on insert", func(t *testing.T) {
@@ -36,9 +36,8 @@ func TestCreateBook(t *testing.T) {
 			WithArgs(book.Title, book.Author, utils.ConvertStorePrice(&book.Price)).
 			WillReturnError(errors.New("insert error"))
 
-		id, err := bookRepo.CreateBook(book)
+		err := bookRepo.CreateBook(book)
 		assert.Error(t, err)
-		assert.Equal(t, int64(0), id)
 	})
 }
 

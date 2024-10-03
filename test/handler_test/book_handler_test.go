@@ -3,6 +3,7 @@ package handler_test
 import (
 	"bookstore/internal/handler"
 	"bookstore/internal/model"
+	"bookstore/pkg/utils"
 	"bookstore/test/mocks"
 	"bytes"
 	"encoding/json"
@@ -100,7 +101,7 @@ func TestBookHandler_GetBookById(t *testing.T) {
 	t.Run("book not found", func(t *testing.T) {
 		mockBookService.EXPECT().
 			GetBookById(1).
-			Return((*model.Book)(nil), errors.New("book not found"))
+			Return((*model.Book)(nil), utils.ErrBookNotFound)
 
 		req, _ := http.NewRequest(http.MethodGet, "/books/1", nil)
 		w := httptest.NewRecorder()
@@ -125,7 +126,7 @@ func TestBookHandler_CreateBook(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		newBook := model.Book{ID: int64(1), Title: "New Book", Author: "New Author", Price: 1.23}
-		mockBookService.EXPECT().CreateBook(&newBook).Return(&newBook, nil)
+		mockBookService.EXPECT().CreateBook(&newBook).Return(nil)
 
 		jsonBook, _ := json.Marshal(newBook)
 		req, _ := http.NewRequest(http.MethodPost, "/books", bytes.NewBuffer(jsonBook))
@@ -151,7 +152,7 @@ func TestBookHandler_CreateBook(t *testing.T) {
 		newBook := model.Book{Title: "New Book", Author: "New Author"}
 		mockBookService.EXPECT().
 			CreateBook(&newBook).
-			Return(nil, errors.New("failed to create book"))
+			Return(utils.ErrBookNotFound)
 
 		jsonBook, _ := json.Marshal(newBook)
 		req, _ := http.NewRequest(http.MethodPost, "/books", bytes.NewBuffer(jsonBook))
@@ -202,7 +203,7 @@ func TestBookHandler_UpdateBook(t *testing.T) {
 
 	t.Run("book not found", func(t *testing.T) {
 		updatedBook := model.Book{ID: 1, Title: "Updated Book", Author: "Updated Author"}
-		mockBookService.EXPECT().UpdateBook(&updatedBook).Return(errors.New("book not found"))
+		mockBookService.EXPECT().UpdateBook(&updatedBook).Return(utils.ErrBookNotFound)
 
 		jsonBook, _ := json.Marshal(updatedBook)
 		req, _ := http.NewRequest(http.MethodPut, "/books", bytes.NewBuffer(jsonBook))

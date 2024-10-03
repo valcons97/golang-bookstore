@@ -17,7 +17,6 @@ func TestCustomerRepository_Register(t *testing.T) {
 	defer db.Close()
 
 	customerRepo := repository.NewCustomerRepository(db)
-	query := "SELECT id FROM customers WHERE email = ?"
 
 	customer := &model.Customer{
 		Email:    "test@example.com",
@@ -26,10 +25,6 @@ func TestCustomerRepository_Register(t *testing.T) {
 		Address:  "123 Street",
 	}
 	t.Run("successful registration", func(t *testing.T) {
-
-		mock.ExpectQuery(query).
-			WithArgs(customer.Email).
-			WillReturnRows(sqlmock.NewRows([]string{"id"}))
 
 		mock.ExpectExec("INSERT INTO customers").
 			WithArgs(customer.Email, customer.Password, customer.Name, customer.Address).
@@ -43,14 +38,14 @@ func TestCustomerRepository_Register(t *testing.T) {
 
 	t.Run("email already registered", func(t *testing.T) {
 
-		mock.ExpectQuery(query).
-			WithArgs(customer.Email).
-			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+		mock.ExpectExec("INSERT INTO customers").
+			WithArgs(customer.Email, customer.Password, customer.Name, customer.Address).
+			WillReturnError(utils.ErrDuplicateEmail)
 
 		err := customerRepo.Register(customer)
 
 		assert.Error(t, err)
-		assert.EqualError(t, err, "email registered")
+		assert.EqualError(t, err, utils.ErrDuplicateEmail.Error())
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }

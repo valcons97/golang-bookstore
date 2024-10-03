@@ -22,22 +22,19 @@ func TestCreateBook(t *testing.T) {
 	book := &model.Book{Title: "Test Book", Author: "Test Author"}
 
 	t.Run("Success", func(t *testing.T) {
-		mockRepo.EXPECT().CreateBook(book).Return(int64(1), nil)
+		mockRepo.EXPECT().CreateBook(book).Return(nil)
 
-		createdBook, err := bookService.CreateBook(book)
+		err := bookService.CreateBook(book)
 
 		assert.NoError(t, err)
-		assert.Equal(t, int64(1), createdBook.ID)
-		assert.Equal(t, "Test Book", createdBook.Title)
 	})
 
 	t.Run("Error", func(t *testing.T) {
-		mockRepo.EXPECT().CreateBook(book).Return(int64(0), errors.New("creation error"))
+		mockRepo.EXPECT().CreateBook(book).Return(errors.New("creation error"))
 
-		createdBook, err := bookService.CreateBook(book)
+		err := bookService.CreateBook(book)
 
 		assert.Error(t, err)
-		assert.Nil(t, createdBook)
 	})
 }
 

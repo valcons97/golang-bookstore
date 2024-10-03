@@ -4,10 +4,10 @@ import (
 	"bookstore/internal/handler"
 	"bookstore/internal/handler/request"
 	"bookstore/internal/model"
+	"bookstore/pkg/utils"
 	"bookstore/test/mocks"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -56,7 +56,7 @@ func TestCustomerHandler_Login(t *testing.T) {
 	t.Run("invalid email or password", func(t *testing.T) {
 		mockCustomerService.EXPECT().
 			Login("wrong@example.com", "wrongpassword").
-			Return("", errors.New("invalid credentials"))
+			Return("", utils.ErrWrongPassword)
 
 		// Prepare request with incorrect credentials
 		loginRequest := request.LoginRequest{Email: "wrong@example.com", Password: "wrongpassword"}

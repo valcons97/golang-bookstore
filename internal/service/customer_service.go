@@ -4,6 +4,8 @@ import (
 	"bookstore/internal/model"
 	"bookstore/internal/repository"
 	"bookstore/pkg/utils"
+	"log"
+	"strings"
 )
 
 type CustomerService interface {
@@ -21,10 +23,19 @@ func NewCustomerService(repository repository.CustomerRepository) CustomerServic
 
 // Login implements CustomerService.
 func (s *customerService) Login(email string, password string) (string, error) {
-	customer, err := s.repository.Login(email, password)
+
+	if email == "" || password == "" {
+		return "", utils.ErrEmptyEmailOrPassword
+	}
+
+	customer, err := s.repository.Login(strings.ToLower(email), password)
 
 	if err != nil {
 		return "", err
+	}
+
+	if !utils.CheckPassword(password, customer.Password) {
+		return "", utils.ErrWrongPassword
 	}
 
 	token, err := utils.GenerateToken(
@@ -39,7 +50,15 @@ func (s *customerService) Login(email string, password string) (string, error) {
 	return token, nil
 }
 
-// Register implements CustomerService.
 func (s *customerService) Register(customer *model.Customer) error {
+	hashedPassword, err := utils.HashPassword(customer.Password)
+	if err != nil {
+		log.Printf("[Register] failed to hash for email: %s e: %v", customer.Email, err)
+		return err
+	}
+
+	customer.Email = strings.ToLower(customer.Email)
+	customer.Password = hashedPassword
+
 	return s.repository.Register(customer)
 }

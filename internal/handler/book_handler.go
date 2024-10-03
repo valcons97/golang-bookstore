@@ -3,6 +3,8 @@ package handler
 import (
 	"bookstore/internal/model"
 	"bookstore/internal/service"
+	"bookstore/pkg/utils"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -36,8 +38,11 @@ func (h *BookHandler) GetBookById(c *gin.Context) {
 
 	book, err := h.Service.GetBookById(id)
 	if err != nil {
-		ErrorHandler(c, http.StatusNotFound, "Book not found")
-		return
+		if errors.Is(err, utils.ErrBookNotFound) {
+			ErrorHandler(c, http.StatusNotFound, "Book not found")
+			return
+		}
+		ErrorHandler(c, http.StatusInternalServerError, err.Error())
 	}
 
 	c.JSON(http.StatusOK, book)
@@ -49,13 +54,15 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 		ErrorHandler(c, http.StatusBadRequest, "")
 		return
 	}
-	createdBook, err := h.Service.CreateBook(&book)
+	err := h.Service.CreateBook(&book)
 	if err != nil {
 		ErrorHandler(c, http.StatusInternalServerError, "Failed to create book")
 		return
 	}
 
-	c.JSON(http.StatusCreated, createdBook)
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Book Created",
+	})
 }
 
 func (h *BookHandler) UpdateBook(c *gin.Context) {
@@ -65,9 +72,13 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 		return
 	}
 
-	if err := h.Service.UpdateBook(&book); err != nil {
-		ErrorHandler(c, http.StatusNotFound, "Book not found")
-		return
+	err := h.Service.UpdateBook(&book)
+	if err != nil {
+		if errors.Is(err, utils.ErrBookNotFound) {
+			ErrorHandler(c, http.StatusNotFound, "Book not found")
+			return
+		}
+
 	}
 
 	c.JSON(http.StatusOK, book)

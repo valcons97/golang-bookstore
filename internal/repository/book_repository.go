@@ -5,12 +5,11 @@ import (
 	"bookstore/pkg/utils"
 
 	"database/sql"
-	"fmt"
 	"log"
 )
 
 type BookRepository interface {
-	CreateBook(book *model.Book) (int64, error)
+	CreateBook(book *model.Book) error
 	GetBooks() ([]model.Book, error)
 	GetBookById(id int) (*model.Book, error)
 	UpdateBook(book *model.Book) error
@@ -25,17 +24,15 @@ func NewBookRepository(db *sql.DB) BookRepository {
 }
 
 // Add new book to the database.
-func (r *bookRepository) CreateBook(book *model.Book) (int64, error) {
-	var id int64
+func (r *bookRepository) CreateBook(book *model.Book) error {
 
-	query := "INSERT INTO books (title, author, price) VALUES ($1, $2, $3) RETURNING ID"
-	err := r.db.QueryRow(query, book.Title, book.Author, utils.ConvertStorePrice(&book.Price)).
-		Scan(&id)
+	query := "INSERT INTO books (title, author, price) VALUES ($1, $2, $3)"
+	_, err := r.db.Query(query, book.Title, book.Author, utils.ConvertStorePrice(&book.Price))
 	if err != nil {
 		log.Printf("[CreateBook] Error inserting book: %v", err)
-		return 0, err
+		return err
 	}
-	return id, nil
+	return nil
 }
 
 // Retrieves list of all books
@@ -43,7 +40,8 @@ func (r *bookRepository) GetBooks() ([]model.Book, error) {
 	query := "SELECT id, title, author, price FROM books"
 	rows, err := r.db.Query(query)
 	if err != nil {
-		log.Printf("[GetBooks] Error retrieving books: %v", err)
+		// db error
+		log.Printf("[GetBooks] Error retrieving list of books from database: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -54,15 +52,11 @@ func (r *bookRepository) GetBooks() ([]model.Book, error) {
 		var price int64
 		err := rows.Scan(&book.ID, &book.Title, &book.Author, &price)
 		if err != nil {
-			log.Printf("[GetBooks] Error scanning book: %v", err)
+			log.Printf("[GetBooks] Error getting book: %v", err)
 			return nil, err
 		}
 		book.Price = *utils.ConvertToDisplayPrice(&price)
 		books = append(books, book)
-	}
-	if err = rows.Err(); err != nil {
-		log.Printf("[GetBooks] Error with rows: %v", err)
-		return nil, err
 	}
 	return books, nil
 }
@@ -78,7 +72,7 @@ func (r *bookRepository) GetBookById(id int) (*model.Book, error) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Printf("[GetBookById] Book not found with id: %d", id)
-			return &book, fmt.Errorf("book not found")
+			return &book, utils.ErrBookNotFound
 		}
 		log.Printf("[GetBookById] Error retrieving book with id: %d, error: %v", id, err)
 		return &book, err
@@ -98,7 +92,7 @@ func (r *bookRepository) UpdateBook(book *model.Book) error {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Printf("[UpdateBook] Book not found with id: %d", book.ID)
-			return fmt.Errorf("book not found")
+			return utils.ErrBookNotFound
 		}
 		log.Printf("[UpdateBook] Error updating book with id: %d, error: %v", book.ID, err)
 		return err

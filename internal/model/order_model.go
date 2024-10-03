@@ -32,3 +32,8 @@ type OrderDetailResponse struct {
 	Quantity int64   `json:"quantity"`
 	Subtotal float64 `json:"subtotal"`
 }
+
+type OrderState int
+
+const OrderState_One OrderState = 1  // 
+const OrderState_Two OrderState = 2
