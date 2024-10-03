@@ -35,5 +35,5 @@ type OrderDetailResponse struct {
 
 type OrderState int
 
-const OrderState_One OrderState = 1  // 
-const OrderState_Two OrderState = 2
+const OrderState_One OrderState = 1 // Cart state
+const OrderState_Two OrderState = 2 // Paid state

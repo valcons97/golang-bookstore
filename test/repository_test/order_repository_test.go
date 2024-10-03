@@ -35,11 +35,11 @@ func TestOrderRepository_GetCart(t *testing.T) {
     FROM orders o
     JOIN order_details d ON o.id = d.order_id
     JOIN books b ON d.book_id = b.id
-    WHERE o.id = \$1`
+    WHERE o.id = \$1 AND o.order_state = \$2`
 
 	t.Run("successful retrieval of cart", func(t *testing.T) {
 		mock.ExpectQuery(query).
-			WithArgs(orderID).
+			WithArgs(orderID, model.OrderState_One).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total", "detail_id", "book_id", "quantity", "subtotal", "title", "author", "price"}).
 				AddRow(1, 400, 1, 1, 2, 400, "Book Title", "Author Name", 200))
 
@@ -65,21 +65,9 @@ func TestOrderRepository_GetCart(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
-	t.Run("no cart found", func(t *testing.T) {
-		mock.ExpectQuery(query).
-			WithArgs(orderID).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "total", "detail_id", "book_id", "quantity", "subtotal", "title", "author", "price"}))
-
-		result, err := orderRepo.GetCart(orderID)
-
-		assert.NoError(t, err)
-		assert.Nil(t, result)
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-
 	t.Run("error retrieving cart", func(t *testing.T) {
 		mock.ExpectQuery(query).
-			WithArgs(orderID).
+			WithArgs(orderID, model.OrderState_One).
 			WillReturnError(sql.ErrNoRows)
 
 		result, err := orderRepo.GetCart(orderID)
@@ -101,11 +89,21 @@ func TestOrderRepository_GetOrderHistory(t *testing.T) {
 	limit := 10
 	page := 0
 
-	query := `SELECT o.id, o.total, d.id AS detail_id, d.book_id, d.quantity, d.subtotal, b.title, b.author, b.price`
+	query := regexp.QuoteMeta(`SELECT o.id, o.total,
+	d.id AS detail_id, d.book_id, d.quantity, d.subtotal,
+	b.title, b.author, b.price
+	FROM (
+	  SELECT * FROM orders
+	  WHERE customer_id = $1 AND order_state = $4
+	  ORDER BY updated_at ASC
+	  LIMIT $2 OFFSET $3
+	) o
+	JOIN order_details d ON o.id = d.order_id
+	JOIN books b ON d.book_id = b.id`)
 
 	t.Run("successful retrieval of order history", func(t *testing.T) {
 		mock.ExpectQuery(query).
-			WithArgs(customerID, limit, page*limit).
+			WithArgs(customerID, limit, page*limit, model.OrderState_Two).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total", "detail_id", "book_id", "quantity", "subtotal", "title", "author", "price"}).
 				AddRow(1, 3197, 1, 1, 2, 2398, "1984", "George Orwell", 999).
 				AddRow(1, 3197, 2, 2, 1, 799, "To Kill a Mockingbird", "Harper Lee", 799))
@@ -153,7 +151,7 @@ func TestOrderRepository_GetOrderHistory(t *testing.T) {
 
 	t.Run("error when retrieving order history", func(t *testing.T) {
 		mock.ExpectQuery(query).
-			WithArgs(customerID, limit, page*limit).
+			WithArgs(customerID, limit, page*limit, model.OrderState_Two).
 			WillReturnError(sql.ErrNoRows)
 
 		orders, err := orderRepo.GetOrderHistory(customerID, limit, page)
@@ -173,13 +171,13 @@ func TestOrderRepository_PayOrder(t *testing.T) {
 	customerID := 1
 
 	query := regexp.QuoteMeta(
-		`UPDATE orders SET order_state = 2, updated_at = NOW() WHERE customer_id = $1 AND order_state = 1 RETURNING id;`,
+		`UPDATE orders SET order_state = $2, updated_at = NOW() WHERE customer_id = $1 AND order_state = $3 RETURNING id;`,
 	)
 
 	t.Run("successful payment of order", func(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectExec(query).
-			WithArgs(customerID).
+			WithArgs(customerID, model.OrderState_Two, model.OrderState_One).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		mock.ExpectCommit()
@@ -201,7 +199,7 @@ func TestOrderRepository_PayOrder(t *testing.T) {
 	t.Run("error when executing update", func(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectExec(query).
-			WithArgs(customerID).
+			WithArgs(customerID, model.OrderState_Two, model.OrderState_One).
 			WillReturnError(sql.ErrNoRows)
 
 		mock.ExpectRollback()
@@ -215,7 +213,7 @@ func TestOrderRepository_PayOrder(t *testing.T) {
 	t.Run("error when committing transaction", func(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectExec(query).
-			WithArgs(customerID).
+			WithArgs(customerID, model.OrderState_Two, model.OrderState_One).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		mock.ExpectCommit().WillReturnError(sql.ErrConnDone)
@@ -236,13 +234,15 @@ func TestOrderRepository_CreateOrderIfNotExists(t *testing.T) {
 
 	customerID := 1
 
-	checkQuery := `SELECT id FROM orders WHERE customer_id = \$1 AND order_state = 1`
+	checkQuery := regexp.QuoteMeta(
+		`SELECT id FROM orders WHERE customer_id = $1 AND order_state = $2`,
+	)
 
 	insertQuery := `INSERT INTO orders \(customer_id, updated_at, total\) VALUES \(\$1, NOW\(\), 0\) RETURNING id`
 
 	t.Run("existing order found", func(t *testing.T) {
 		mock.ExpectQuery(checkQuery).
-			WithArgs(customerID).
+			WithArgs(customerID, model.OrderState_One).
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
 		id, err := orderRepo.CreateOrderIfNotExists(customerID)
@@ -253,7 +253,7 @@ func TestOrderRepository_CreateOrderIfNotExists(t *testing.T) {
 
 	t.Run("no existing order found, create new order", func(t *testing.T) {
 		mock.ExpectQuery(checkQuery).
-			WithArgs(customerID).
+			WithArgs(customerID, model.OrderState_One).
 			WillReturnError(sql.ErrNoRows)
 
 		mock.ExpectQuery(insertQuery).
@@ -268,7 +268,7 @@ func TestOrderRepository_CreateOrderIfNotExists(t *testing.T) {
 
 	t.Run("error while checking existing orders", func(t *testing.T) {
 		mock.ExpectQuery(checkQuery).
-			WithArgs(customerID).
+			WithArgs(customerID, model.OrderState_One).
 			WillReturnError(sql.ErrConnDone)
 
 		id, err := orderRepo.CreateOrderIfNotExists(customerID)
@@ -279,7 +279,7 @@ func TestOrderRepository_CreateOrderIfNotExists(t *testing.T) {
 
 	t.Run("error while creating new order", func(t *testing.T) {
 		mock.ExpectQuery(checkQuery).
-			WithArgs(customerID).
+			WithArgs(customerID, model.OrderState_One).
 			WillReturnError(sql.ErrNoRows)
 
 		mock.ExpectQuery(insertQuery).

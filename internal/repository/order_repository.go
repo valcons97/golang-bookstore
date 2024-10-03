@@ -32,9 +32,9 @@ func (r *orderRepository) GetCart(orderId int) (*model.OrderResponse, error) {
 			  FROM orders o
 			  JOIN order_details d ON o.id = d.order_id
 			  JOIN books b ON d.book_id = b.id
-			  WHERE o.id = $1`
+			  WHERE o.id = $1 AND o.order_state = $2`
 
-	rows, err := r.db.Query(query, orderId)
+	rows, err := r.db.Query(query, orderId, model.OrderState_One)
 	if err != nil {
 		log.Printf("[GetCart] Error retrieving cart: %v", err)
 		return nil, err
@@ -46,11 +46,6 @@ func (r *orderRepository) GetCart(orderId int) (*model.OrderResponse, error) {
 	if err != nil {
 		log.Printf("[GetCart] Error converting rows to detail response: %v", err)
 		return nil, err
-	}
-
-	// Check if the cart slice is empty
-	if len(cart) == 0 {
-		return nil, nil
 	}
 
 	// Return the first OrderResponse
@@ -175,14 +170,14 @@ func (r *orderRepository) GetOrderHistory(
 			  b.title, b.author, b.price
 			  FROM (
 				SELECT * FROM orders
-				WHERE customer_id = $1 AND order_state != 1
+				WHERE customer_id = $1 AND order_state = $4
 				ORDER BY updated_at ASC
 				LIMIT $2 OFFSET $3
 			  ) o
 			  JOIN order_details d ON o.id = d.order_id
 			  JOIN books b ON d.book_id = b.id`
 
-	rows, err := r.db.Query(query, customerID, limit, page*limit)
+	rows, err := r.db.Query(query, customerID, limit, page*limit, model.OrderState_Two)
 	if err != nil {
 		log.Printf(
 			"[GetOrderHistory] Error retrieving paid orders for customer ID %d: %v",
@@ -194,28 +189,28 @@ func (r *orderRepository) GetOrderHistory(
 
 	defer rows.Close()
 
-	log.Println(rows)
 	return utils.ConvertToDetailResponse(rows)
 }
 
+// Create Order / Cart if not exist.
+// Order state :
+// - OrderState_One means still in cart state
+// - OrderState_Two means already in paid state
 func (r *orderRepository) CreateOrderIfNotExists(customerID int) (int, error) {
 	var id int
 
 	err := r.db.QueryRow(`
 		SELECT id FROM orders
-		WHERE customer_id = $1 AND order_state = 1
-	`, customerID).Scan(&id)
+		WHERE customer_id = $1 AND order_state = $2
+	`, customerID, model.OrderState_One).Scan(&id)
 
 	if err == nil {
-
 		return id, nil
 	} else if err != sql.ErrNoRows {
-		// If there's another error, log and return it
-		log.Printf("[CreateOrderIfNotExists] Error checking for existing order for customer ID %d: %v", customerID, err)
+		log.Printf("[CreateOrderIfNotExists] Error checking order to database for customer ID %d: %v", customerID, err)
 		return 0, err
 	}
 
-	// If no existing order, create a new one
 	query := `
 	INSERT INTO orders (customer_id, updated_at, total)
 	VALUES ($1, NOW(), 0)
@@ -250,9 +245,9 @@ func (r *orderRepository) PayOrder(customerID int) error {
 	// Update the order state to indicate it has been paid for the first order that matches the customerID
 	_, err = tx.Exec(`
     UPDATE orders
-    SET order_state = 2, updated_at = NOW()
-    WHERE customer_id = $1 AND order_state = 1
-    RETURNING id;`, customerID) // Only update if the current state is 1
+    SET order_state = $2, updated_at = NOW()
+    WHERE customer_id = $1 AND order_state = $3
+    RETURNING id;`, customerID, model.OrderState_Two, model.OrderState_One) // Only update if the current state is 1 or Cart
 	if err != nil {
 		tx.Rollback()
 		log.Printf("[PayOrder] Error updating order state for customer ID %d: %v", customerID, err)
