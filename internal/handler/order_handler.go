@@ -3,6 +3,8 @@ package handler
 import (
 	"bookstore/internal/handler/request"
 	"bookstore/internal/service"
+	"bookstore/pkg/utils"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -47,11 +49,17 @@ func (h *OrderHandler) GetCart(c *gin.Context) {
 	response, err := h.service.GetCart(id.(int))
 
 	if err != nil {
-		ErrorHandler(
-			c,
-			http.StatusInternalServerError,
-			"Unable to retrieve cart. Please try again later.",
-		)
+		if errors.Is(err, utils.WarnCartEmpty) {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "Cart is empty",
+			})
+		} else {
+			ErrorHandler(
+				c,
+				http.StatusInternalServerError,
+				"Unable to retrieve cart. Please try again later.",
+			)
+		}
 		return
 	}
 
@@ -75,11 +83,17 @@ func (h *OrderHandler) GetOrderHistory(c *gin.Context) {
 	response, err := h.service.GetOrderHistory(id.(int), request)
 
 	if err != nil {
-		ErrorHandler(
-			c,
-			http.StatusInternalServerError,
-			"Unable to retrieve order history. Please try again later.",
-		)
+		if errors.Is(err, utils.WarnCartEmpty) {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "History is empty",
+			})
+		} else {
+			ErrorHandler(
+				c,
+				http.StatusInternalServerError,
+				"Unable to retrieve order history. Please try again later.",
+			)
+		}
 		return
 	}
 

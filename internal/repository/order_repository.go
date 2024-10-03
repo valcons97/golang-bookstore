@@ -48,6 +48,10 @@ func (r *orderRepository) GetCart(orderId int) (*model.OrderResponse, error) {
 		return nil, err
 	}
 
+	if len(cart) == 0 {
+		return nil, utils.WarnCartEmpty
+	}
+
 	// Return the first OrderResponse
 	return &cart[0], nil
 }

@@ -9,4 +9,6 @@ var (
 	ErrWrongPassword        = errors.New("wrong password")
 	ErrEmptyEmailOrPassword = errors.New("empty")
 	ErrEmailNotFound        = errors.New("email not found")
+
+	WarnCartEmpty = errors.New("cart empty")
 )

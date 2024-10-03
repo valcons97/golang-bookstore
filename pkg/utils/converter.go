@@ -33,6 +33,8 @@ func ConvertToDetailResponse(rows *sql.Rows) ([]model.OrderResponse, error) {
 	var orders []model.OrderResponse
 	orderMap := make(map[int]*model.OrderResponse)
 
+	// Return immediately if no rows are present
+
 	for rows.Next() {
 		var orderID, detailID, quantity int
 		var bookID int64

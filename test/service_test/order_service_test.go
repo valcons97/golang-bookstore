@@ -73,7 +73,31 @@ func TestGetCart(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		orderID := 1
-		expectedResponse := &model.OrderResponse{ID: int64(orderID)}
+		detailID := int64(1)
+		quantity := int64(2)
+		subtotal := 20.0
+
+		expectedBook := model.Book{
+			ID:     1,
+			Title:  "Example Book",
+			Author: "Author Name",
+			Price:  10.0,
+		}
+
+		expectedOrderDetailResponse := model.OrderDetailResponse{
+			ID:       detailID,
+			Book:     []model.Book{expectedBook},
+			Quantity: quantity,
+			Subtotal: subtotal,
+		}
+
+		expectedResponse := &model.OrderResponse{
+			ID: int64(orderID),
+			OrderDetail: []model.OrderDetailResponse{
+				expectedOrderDetailResponse,
+			},
+			Total: subtotal,
+		}
 
 		mockRepo.EXPECT().CreateOrderIfNotExists(customerID).Return(orderID, nil)
 		mockRepo.EXPECT().GetCart(orderID).Return(expectedResponse, nil)
@@ -82,6 +106,23 @@ func TestGetCart(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResponse, response)
+	})
+
+	t.Run("Cart Empty", func(t *testing.T) {
+		orderID := 1
+
+		mockRepo.EXPECT().CreateOrderIfNotExists(customerID).Return(orderID, nil)
+		mockRepo.EXPECT().GetCart(orderID).Return(&model.OrderResponse{
+			ID:          int64(orderID),
+			OrderDetail: []model.OrderDetailResponse{},
+			Total:       0.0,
+		}, nil)
+
+		response, err := orderService.GetCart(customerID)
+
+		assert.Error(t, err)
+		assert.EqualError(t, err, "cart empty")
+		assert.Nil(t, response)
 	})
 
 	t.Run("Error creating order", func(t *testing.T) {

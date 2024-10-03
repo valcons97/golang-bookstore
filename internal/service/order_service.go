@@ -5,6 +5,7 @@ import (
 	"bookstore/internal/model"
 	"bookstore/internal/repository"
 	"bookstore/pkg/utils"
+	"errors"
 )
 
 type OrderService interface {
@@ -53,7 +54,16 @@ func (s *orderService) GetCart(customerID int) (*model.OrderResponse, error) {
 		return nil, err
 	}
 
-	return s.repository.GetCart(orderId)
+	cart, err := s.repository.GetCart(orderId)
+
+	if err != nil {
+		return nil, err
+	}
+	if cart == nil || len(cart.OrderDetail) == 0 {
+		return nil, errors.New("cart empty")
+	}
+
+	return cart, nil
 }
 
 func (s *orderService) GetOrderHistory(
@@ -65,7 +75,17 @@ func (s *orderService) GetOrderHistory(
 		request.Limit = 10
 	}
 
-	return s.repository.GetOrderHistory(customerID, request.Limit, request.Page)
+	orders, err := s.repository.GetOrderHistory(customerID, request.Limit, request.Page)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(orders) == 0 {
+		return nil, utils.WarnCartEmpty
+	}
+
+	return orders, nil
 }
 
 func (s *orderService) RemoveFromCart(customerID int, bookId int) error {
